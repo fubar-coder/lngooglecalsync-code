@@ -16,7 +16,7 @@ javaPath = ""
 ' You will have to set this flag to 0 if you have Lotus v7 or earlier
 ' (because it comes with Java 1.4).
 ' Simple, eh?
-useLotusJava = 1
+useLotusJava = 0
 
 
 
@@ -86,24 +86,38 @@ processPath = oEnv.Item("PATH")
 oEnv("PATH") = lotusPath & ";" & lotusIniPath & ";" & processPath  
 
 ' Set the classpath so Notes.jar can be found
-classPath = lotusJarPath & ";.\lngsync.jar"
+classPath = """" & lotusJarPath & """;.\lngsync.jar"
 oEnv("CLASSPATH") = classPath
 
 if javaPath = "" then
 	' Get the path to the version of Java installed with Lotus Notes.
 	' It is safest to use the Lotus Java for compatibility with Notes.jar.
-	if useLotusJava then javaPath = lotusPath & "\jvm\bin\javaw.exe"
+	if useLotusJava then
+		if oFileSys.FolderExists(lotusPath & "\jvm\bin") then
+			javaPath = lotusPath & "\jvm\bin\javaw.exe"
+		else
+			useLotusJava = 0
+		end if
+	end if
 	' If present, get the path from JAVA_HOME
 	if javaPath = "" then javaPath = oEnv.Item("JAVA_HOME") & "\bin\javaw.exe"
 	' Let the OS find Java via the PATH
 	if javaPath = "" then javaPath = "javaw.exe"
 end if
 
-'MsgBox "DEBUG INFO" & vbCRLF & vbCRLF & "useLotusJava: " & useLotusJava & vbCRLF & vbCRLF & "lotusPath: " & lotusPath & vbCRLF & vbCRLF & "lotusJarPath: " & lotusJarPath & vbCRLF & vbCRLF & "lotusIniPath: " & lotusIniPath & vbCRLF & vbCRLF & "classPath: " & classPath & vbCRLF & vbCRLF & "javaPath: " & javaPath & vbCRLF & vbCRLF & "appParm: " & appParm, vbOKOnly, "DEBUG"
+dim debugInfo, oLogFile, logFilename
+logFilename = "lngsync.log"
+debugInfo = "useLotusJava: " & useLotusJava & vbCRLF & vbCRLF & "lotusPath: " & lotusPath & vbCRLF & vbCRLF & "lotusJarPath: " & lotusJarPath & vbCRLF & vbCRLF & "lotusIniPath: " & lotusIniPath & vbCRLF & vbCRLF & "classPath: " & classPath & vbCRLF & vbCRLF & "javaPath: " & javaPath & vbCRLF & vbCRLF & "appParm: " & appParm
+'MsgBox "DEBUG INFO" & vbCRLF & vbCRLF & debugInfo, vbOKOnly, "DEBUG" 
+Set oLogFile = oFileSys.CreateTextFile(logFilename, TRUE)
+oLogFile.WriteLine(debugInfo)
+oLogFile.Close
+
 
 ' Run the Java application
 set oJavawExec = oShell.Exec("""" & javaPath & """ lngs.MainGUI " & appParm)
-'wscript.quit
+'set oJavawExec = oShell.Exec("""" & javaPath & """ -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStore=c:/Progra~2/Lotus/Notes/jvm/lib/security/cacerts lngs.MainGUI " & appParm)
+
 
 ' Wait for javaw to finish
 Do While oJavawExec.Status = 0 
@@ -112,9 +126,8 @@ Loop
 
 if silentMode then
 	' Write stdout and stderr to a log file
-	Dim oFileSystem, oOutputFile
-	Set oFileSystem = CreateObject("Scripting.fileSystemObject")
-	Set oOutputFile = oFileSystem.CreateTextFile("lngsync.log", TRUE)
+	Dim oOutputFile
+	Set oOutputFile = oFileSys.CreateTextFile(logFilename, TRUE)
 	oOutputFile.WriteLine(oJavawExec.StdOut.ReadAll)
 	oOutputFile.WriteLine(oJavawExec.StdErr.ReadAll)
 	oOutputFile.Close

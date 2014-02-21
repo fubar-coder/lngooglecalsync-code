@@ -120,8 +120,7 @@ public class LotusNotesManager {
             wasNotesThreadInitialized = true;
 
             // Note: We cast null to a String to avoid overload conflicts
-            Session session = NotesFactory.createSession((String) null,
-                    (String) null, password);
+            Session session = NotesFactory.createSession((String)null, (String)null, password);
             notesVersion = session.getNotesVersion();
 
             String dominoServerTemp = server;
@@ -132,6 +131,17 @@ public class LotusNotesManager {
 
             Database db = session.getDatabase(dominoServerTemp, mailfile, false);
 
+            if (db == null) {
+                // Strip off any path info from the mailfile and try to open the DB again
+                int separatorIdx = mailfile.lastIndexOf(File.separator);
+                if (separatorIdx > -1) {
+                    String shortMailfile = mailfile.substring(separatorIdx+1);
+                    statusMessageCallback.statusAppendLineDiag("Using short mailfile name: " + shortMailfile);
+                    // Open the DB a slightly different way
+                    DbDirectory dbDir = session.getDbDirectory((String)null);
+                    db = dbDir.openDatabase(shortMailfile);
+                }                
+            }
             if (db == null) {
                 throw new Exception(
                     "Couldn't create Lotus Notes Database object.");

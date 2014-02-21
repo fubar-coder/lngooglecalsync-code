@@ -10,6 +10,7 @@
   </Properties>
   <SyntheticProperties>
     <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
   </SyntheticProperties>
   <Events>
     <EventHandler event="windowClosed" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosed"/>
@@ -570,7 +571,7 @@
                                                           <Component id="jLabel18" min="-2" pref="126" max="-2" attributes="0"/>
                                                           <Component id="jLabel19" alignment="0" min="-2" pref="130" max="-2" attributes="0"/>
                                                       </Group>
-                                                      <EmptySpace max="-2" attributes="0"/>
+                                                      <EmptySpace max="32767" attributes="0"/>
                                                   </Group>
                                                   <Group type="102" attributes="0">
                                                       <Component id="jLabel8" max="32767" attributes="0"/>
@@ -906,7 +907,7 @@
         <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
           <Color blue="ff" green="33" red="33" type="rgb"/>
         </Property>
-        <Property name="text" type="java.lang.String" value="This tool synchronizes your Lotus Notes calendar to your Google calendar."/>
+        <Property name="text" type="java.lang.String" value="This tool synchronizes a Lotus Notes calendar to a Google calendar."/>
       </Properties>
     </Component>
     <Component class="javax.swing.JButton" name="jButton_Help">

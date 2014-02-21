@@ -53,7 +53,7 @@ public class NewVersionDialog extends javax.swing.JDialog {
 
         jTextPane_Changes.setEditable(false);
         jTextPane_Changes.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
-        jTextPane_Changes.setText("o Fix: LNGS was always deleting and recreating GCal entries because GCal changed their default value for when a calendar entry doesn't have a location. GCal previously used null; now it is \"\". LNGS now checks for both.\no Fix: Google has a limit for the length of subject/title values, around 1600 characters. Lotus has some limit greater than Google. When the app compared a Lotus entry with a 2000 char subject to the corresponding Google entry (which had its description truncated to 1600), the app would incorrectly assume they didn't match. Now, subject values are truncated to 1000 chars before being added to Google and before the Lotus-to-Google compare is performed.\no Fix: A syntax error in the OS X sections of lnconntest.sh and lngsync.sh was fixed. Thanks to Hajo Pross.\no Enhancement: The date format used on a remote Lotus Notes server is sometimes different than the local client format (e.g. m/d/y vs d/m/y). This has been a recurring problem for a few users. A new Server Date Format field has been added to the Connection Settings tab so those users can specify the date format that works with their Lotus server.\no Enhancement: The Troubleshooting section of Help, now talks about using TCPView to identify a proxy address.\no Enhancement: The Troubleshooting section of Help, now talks about the \"Cannot access the calendar you requested\" error.\no Enhancement: The lngsync.vbs script was changed to check the JAVA_HOME path for the location of javaw.exe. Thanks to David Zeleznik.\no News: I ran a second Tough Mudder race with a group of co-workers. Fun time (but I hate the Electric Eel).\no Quote: It has been said that democracy is the worst form of government except all the others that have been tried. - Winston Churchill");
+        jTextPane_Changes.setText("o Fix: Several checks were added to see if Google Calendar is returning a null field.\no Note: tbd\no Quote: tbd");
         jScrollPane2.setViewportView(jTextPane_Changes);
 
         jLabel_Heading1.setText("This version is being run for the first time in GUI mode.");
@@ -94,27 +94,27 @@ public class NewVersionDialog extends javax.swing.JDialog {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addGap(330, 330, 330)
+                .addComponent(jButton_OK)
+                .addGap(55, 55, 55)
+                .addComponent(jLabel_Donate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jLabel_Heading1)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jLabel_Heading3)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jLabel_HelpFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jLabel_Heading2, javax.swing.GroupLayout.PREFERRED_SIZE, 666, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(0, 59, Short.MAX_VALUE))))
+                        .addGap(10, 10, 10)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(330, 330, 330)
-                        .addComponent(jButton_OK)
-                        .addGap(55, 55, 55)
-                        .addComponent(jLabel_Donate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel_Heading1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel_Heading3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel_HelpFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jLabel_Heading2, javax.swing.GroupLayout.PREFERRED_SIZE, 666, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(0, 69, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(

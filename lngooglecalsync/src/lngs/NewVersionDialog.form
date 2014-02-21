@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<Form version="1.8" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JDialogFormInfo">
+<Form version="1.8" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JDialogFormInfo">
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="2"/>
     <Property name="title" type="java.lang.String" value="New Version Announcement"/>
@@ -8,6 +8,7 @@
   </Properties>
   <SyntheticProperties>
     <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
   </SyntheticProperties>
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
@@ -25,32 +26,31 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
+              <EmptySpace min="-2" pref="330" max="-2" attributes="0"/>
+              <Component id="jButton_OK" min="-2" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="55" max="-2" attributes="0"/>
+              <Component id="jLabel_Donate" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
+          </Group>
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jScrollPane2" pref="0" max="32767" attributes="0"/>
-                          <Group type="102" attributes="0">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" attributes="0">
-                                      <Component id="jLabel_Heading1" min="-2" max="-2" attributes="0"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="jLabel_Heading3" min="-2" max="-2" attributes="0"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="jLabel_HelpFile" min="-2" max="-2" attributes="0"/>
-                                  </Group>
-                                  <Component id="jLabel_Heading2" min="-2" pref="666" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace min="0" pref="59" max="32767" attributes="0"/>
-                          </Group>
-                      </Group>
+                  <Group type="102" attributes="0">
+                      <EmptySpace min="10" pref="10" max="-2" attributes="0"/>
+                      <Component id="jScrollPane2" pref="0" max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" attributes="0">
-                      <EmptySpace min="-2" pref="330" max="-2" attributes="0"/>
-                      <Component id="jButton_OK" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="55" max="-2" attributes="0"/>
-                      <Component id="jLabel_Donate" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" attributes="0">
+                              <Component id="jLabel_Heading1" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="jLabel_Heading3" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="jLabel_HelpFile" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Component id="jLabel_Heading2" min="-2" pref="666" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace min="0" pref="69" max="32767" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -104,7 +104,7 @@
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
               <Font name="Tahoma" size="12" style="0"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="o Fix: LNGS was always deleting and recreating GCal entries because GCal changed their default value for when a calendar entry doesn&apos;t have a location. GCal previously used null; now it is &quot;&quot;. LNGS now checks for both.&#xa;o Fix: Google has a limit for the length of subject/title values, around 1600 characters. Lotus has some limit greater than Google. When the app compared a Lotus entry with a 2000 char subject to the corresponding Google entry (which had its description truncated to 1600), the app would incorrectly assume they didn&apos;t match. Now, subject values are truncated to 1000 chars before being added to Google and before the Lotus-to-Google compare is performed.&#xa;o Fix: A syntax error in the OS X sections of lnconntest.sh and lngsync.sh was fixed. Thanks to Hajo Pross.&#xa;o Enhancement: The date format used on a remote Lotus Notes server is sometimes different than the local client format (e.g. m/d/y vs d/m/y). This has been a recurring problem for a few users. A new Server Date Format field has been added to the Connection Settings tab so those users can specify the date format that works with their Lotus server.&#xa;o Enhancement: The Troubleshooting section of Help, now talks about using TCPView to identify a proxy address.&#xa;o Enhancement: The Troubleshooting section of Help, now talks about the &quot;Cannot access the calendar you requested&quot; error.&#xa;o Enhancement: The lngsync.vbs script was changed to check the JAVA_HOME path for the location of javaw.exe. Thanks to David Zeleznik.&#xa;o News: I ran a second Tough Mudder race with a group of co-workers. Fun time (but I hate the Electric Eel).&#xa;o Quote: It has been said that democracy is the worst form of government except all the others that have been tried. - Winston Churchill"/>
+            <Property name="text" type="java.lang.String" value="o Fix: Several checks were added to see if Google Calendar is returning a null field.&#xa;o Note: tbd&#xa;o Quote: tbd"/>
           </Properties>
         </Component>
       </SubComponents>

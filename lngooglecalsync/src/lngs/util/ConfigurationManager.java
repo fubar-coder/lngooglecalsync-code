@@ -4,10 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
-import com.google.gdata.util.common.util.Base64;
-
-//import sun.misc.BASE64Decoder;
-//import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
 public class ConfigurationManager {
 
@@ -359,11 +356,13 @@ public class ConfigurationManager {
     }
 
     protected String encodePassword(String password) {
-    	return Base64.encode(password.getBytes());
+        byte[] encoded = Base64.encodeBase64(password.getBytes());
+        return new String(encoded);
     }
 
     protected String decodePassword(String encodedPassword ) throws Exception {
-        byte[] data = Base64.decode(encodedPassword);
+        byte[] data = Base64.decodeBase64(encodedPassword);
+        
         return new String(data);
     }
 

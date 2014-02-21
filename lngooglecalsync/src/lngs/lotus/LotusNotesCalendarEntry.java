@@ -220,10 +220,25 @@ public class LotusNotesCalendarEntry {
     }
 
     /**
-     * @return Returns the start datetime in Lotus Notes format.
+     * @return Returns the start datetime.
      */
     public Date getStartDateTime() {
         return startDateTime;
+    }
+
+    /**
+     * @return Returns the start date (without a time portion).
+     * @param addDays Add (or subtract) this many days from the returned value.
+     */
+    public Date getStartDate(int addDays) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(startDateTime);
+        cal.add(Calendar.DATE, addDays);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
     }
 
     public String getStartDateTimeGoogle() throws ParseException {
@@ -247,6 +262,20 @@ public class LotusNotesCalendarEntry {
         return endDateTime;
     }
 
+    /**
+     * @return Returns the end date (without a time portion).
+     * @param addDays Add (or subtract) this many days from the returned value.
+     */
+    public Date getEndDate(int addDays) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(endDateTime);
+        cal.add(Calendar.DATE, addDays);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
+    }
     public String getEndDateTimeGoogle() throws ParseException {
         return getGoogleDateTimeString(endDateTime);
     }

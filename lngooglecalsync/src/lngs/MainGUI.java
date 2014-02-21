@@ -18,13 +18,12 @@
 
 package lngs;
 
+import com.google.api.services.calendar.model.Event;
 import lngs.util.StatusMessageCallback;
 import lngs.util.ProxyManager;
 import lngs.lotus.LotusNotesManager;
 import lngs.lotus.LotusNotesCalendarEntry;
 import lngs.google.GoogleManager;
-
-import com.google.gdata.data.calendar.CalendarEventEntry;
 
 import java.io.*;
 import java.text.*;
@@ -267,6 +266,19 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             statusAppendLineDiag("Sync Days In Past: " + jTextField_SyncDaysInPast.getText());
             statusAppendLineDiag("Sync Days In Future: " + jTextField_SyncDaysInFuture.getText());
 
+            
+
+//The loaded JSSE trust keystore location
+//statusAppendLineDiag("Java Trust Store: " + System.getProperty("javax.net.ssl.trustStore"));
+//The loaded JSSE trust keystore type
+//statusAppendLineDiag("Java Trust Store Type: " + System.getProperty("javax.net.ssl.trustStoreType"));
+//The JSSE trust keystore provider & encrypted password
+//statusAppendLineDiag("Java Trust Store Provider: " + System.getProperty("javax.net.ssl.trustStoreProvider"));
+//statusAppendLineDiag("Java Trust Store Password: " + System.getProperty("javax.net.ssl.trustStorePassword"));
+
+
+            
+            
 //if (true) {statusAppendLineDiag("DEBUG: Done echoing values. Stopping sync."); return;}
 
             statusAppendLine("Date range: " + dfShort.format(startDate) + " thru " + dfShort.format(endDate) + " (-" + syncDaysInPast +  " to +" + syncDaysInFuture + " days)");
@@ -325,11 +337,12 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             googleMgr.setMinStartDate(startDate);
             googleMgr.setMaxEndDate(endDate);
 
-            googleMgr.Connect();
+            googleMgr.connect();
 
 //if (true) {statusAppendLineDiag("DEBUG: Done logging into Google. Stopping sync."); return;}
 
-            ArrayList<CalendarEventEntry> googleCalEntries = googleMgr.getCalendarEntries();
+            ArrayList<Event> googleCalEntries = googleMgr.getCalendarEntries();
+
             statusAppendLine(googleCalEntries.size() + " Google entries found within date range");
 
             statusAppendStart("Comparing Lotus Notes and Google calendar entries");
@@ -354,6 +367,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 statusAppendFinished();
                 statusAppendLine(createdCount + " Google entries created");
             }
+
         } catch (Exception ex) {
             statusAppendException("There was an error synchronizing.\nSee Troubleshooting in the Help file.\nThis screen output is also in " + logFilename + ".", ex);
             if (!isShowing()) {
@@ -754,7 +768,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                                     .add(jCheckBox_SyncOnStart, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 179, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                     .add(jCheckBox_SyncLocationAndRoom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 199, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                     .add(jCheckBox_SyncMeetingAttendees, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                .addContainerGap())
+                                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
                                 .add(jLabel20, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -939,7 +953,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 237, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())
+                        .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jPanel1Layout.createSequentialGroup()
@@ -964,7 +978,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                                                     .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                                     .add(jLabel18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 126, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                                     .add(jLabel19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED))
+                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                             .add(jPanel1Layout.createSequentialGroup()
                                                 .add(jLabel8, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                                 .add(37, 37, 37)))
@@ -1078,7 +1092,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jTabbedPane1.addTab("Connection Settings", jPanel1);
 
         jLabel16.setForeground(new java.awt.Color(51, 51, 255));
-        jLabel16.setText("This tool synchronizes your Lotus Notes calendar to your Google calendar.");
+        jLabel16.setText("This tool synchronizes a Lotus Notes calendar to a Google calendar.");
 
         jButton_Help.setMnemonic('H');
         jButton_Help.setText("Help");
@@ -1619,7 +1633,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.4";
+    final String appVersion = "2.5.1 Beta 3";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";
