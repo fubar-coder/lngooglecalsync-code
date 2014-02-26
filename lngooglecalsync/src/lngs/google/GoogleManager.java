@@ -26,12 +26,15 @@ import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class GoogleManager {
 
     public GoogleManager() {
+        // Get the absolute path to this app
+        appPath = new java.io.File("").getAbsolutePath() + System.getProperty("file.separator");
+        googleInRangeEntriesFullFilename = appPath + googleInRangeEntriesFilename;
     }
-
 
     /**
      * Login to Google and connect to the calendar.
@@ -40,46 +43,47 @@ public class GoogleManager {
         try {
             statusMessageCallback.statusAppendStart("Logging into Google");
 
-            // Get the absolute path to this app
-            String appPath = new java.io.File("").getAbsolutePath() + System.getProperty("file.separator");
-            googleInRangeEntriesFullFilename = appPath + googleInRangeEntriesFilename;
-
+            String clientIdFilename = getClientIdFilename();              
+            if (clientIdFilename.isEmpty())
+                throw new Exception("Client ID file could not be found.");
+            else
+                statusMessageCallback.statusAppendLineDiag("Found Client ID file: " + clientIdFilename);
             
-            
-            
-statusMessageCallback.statusAppendLineDiag("Logging in loc1");
+//statusMessageCallback.statusAppendLineDiag("Logging in loc1");
             // Initialize the transport
-            httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
 
-statusMessageCallback.statusAppendLineDiag("Logging in loc2");
-            // Initialize the data store factory
-            dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
-
-statusMessageCallback.statusAppendLineDiag("Logging in loc3");
-            // Load client secrets
-            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY,
-                new InputStreamReader(GoogleManager.class.getResourceAsStream("/resources/client_secret.json")));
-            
             boolean doRetry = false;
             int retryCount = 0;
             do {
                 try {
-statusMessageCallback.statusAppendLineDiag("Logging in loc4");
+//statusMessageCallback.statusAppendLineDiag("Logging in loc2");
+                    // Initialize the data store factory
+                    FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(new java.io.File(credentialStorePath));
+            
+//statusMessageCallback.statusAppendLineDiag("Logging in loc3");
+                    // Load client secrets
+                    GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY,
+                        new FileReader(clientIdFilename));
+            
+//statusMessageCallback.statusAppendLineDiag("Logging in loc4");
                     // Set up authorization code flow
                     GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                         httpTransport, JSON_FACTORY, clientSecrets,
                         Collections.singleton(CalendarScopes.CALENDAR)).setDataStoreFactory(dataStoreFactory)
                         .build();
                     
-statusMessageCallback.statusAppendLineDiag("Logging in loc5");
+//statusMessageCallback.statusAppendLineDiag("Logging in loc5");
                     // Authorize with OAuth2
-                    credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize(googleUsername);
+                    Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize(googleUsername);
 
-statusMessageCallback.statusAppendLineDiag("Logging in loc6");
+//statusMessageCallback.statusAppendLineDiag("Logging in loc6");
                     // Set up global Calendar instance
                     client = new com.google.api.services.calendar.Calendar.Builder(
-                        httpTransport, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
-statusMessageCallback.statusAppendLineDiag("Logging in loc7");
+                        httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
+//statusMessageCallback.statusAppendLineDiag("Logging in loc7");
+
+                    createCalendar();
                 } catch (Exception ex) {
                     if (++retryCount > maxRetryCount)
                         throw ex;
@@ -87,15 +91,20 @@ statusMessageCallback.statusAppendLineDiag("Logging in loc7");
                     doRetry = true;
 
                     statusMessageCallback.statusAppendLineDiag("Logging in Retry #" + retryCount + ". Encountered " + ex.toString());
-                    
-                    if (retryCount == 1) {
-                        // Write out the stack trace
-                        StringWriter sw = new StringWriter();
-                        ex.printStackTrace(new PrintWriter(sw));
-                        statusMessageCallback.statusAppendLineDiag(sw.toString());                        
-                    }                    
-                } catch (Throwable ex) {
-                    throw new Exception("An unknown Throwable error occurred.", ex);
+                    Thread.sleep(retryDelayMsecs);
+                                   
+                
+                    if (ex.toString().contains("unauthorized_client")) {
+                        statusMessageCallback.statusAppendLineDiag("Trying to fix problem by deleting/recreating credential file.");
+                        // This error typically means there is an existing credential store that
+                        // doesn't contain the correct ID.
+                        // So delete the credential store directory so it can be re-created
+                        String credentialFilename = credentialStorePath + System.getProperty("file.separator") + "StoredCredential";
+                        File file = new File(credentialFilename);
+                        if (!file.delete()) {
+                            statusMessageCallback.statusAppendLineDiag("Failed to delete: " + credentialFilename);
+                        }
+                    }
                 }
             } while (doRetry);
             
@@ -151,8 +160,6 @@ statusMessageCallback.statusAppendLineDiag("Logging in loc7");
 //                }
 //            } while (doRetry);
 
-            createCalendar();
-
             if (diagnosticMode) {
                 // Get this machine's current time zone
                 TimeZone localTimeZone = TimeZone.getDefault();
@@ -168,6 +175,24 @@ statusMessageCallback.statusAppendLineDiag("Logging in loc7");
         }
     }
 
+    public String getClientIdFilename() {
+        Pattern pattern = Pattern.compile("^client_secret.*\\.json$");
+        
+        File dir = new File(appPath);
+        
+        File[] files = dir.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            String fileName = files[i].getName();
+            if (pattern.matcher(fileName).find()) {
+                if (files[i].isFile()) {
+                    return files[i].getPath();
+                }
+            }
+        }
+        
+        return "";
+    }
+
     /**
      * Creates a Google calendar for the desired name (if it doesn't already exist).
      * @throws IOException
@@ -178,9 +203,9 @@ statusMessageCallback.statusAppendLineDiag("Logging in loc7");
         if (destCalendar != null) {
             return;
         }
-//destinationCalendarName="DeanTest2";
-        // Get a list of all calendars
+        
         CalendarList feed = client.calendarList().list().execute();
+        
         if (feed.getItems() != null) {
             for (CalendarListEntry entry : feed.getItems()) {
 String tz = entry.getTimeZone();
@@ -265,9 +290,12 @@ String bg = newCalEntry.getBackgroundColor();
                     
 // TODO: Try to do a batch delete.
             for (int i = 0; i < googleCalEntries.size(); i++) {
+                Event event = googleCalEntries.get(i);
+                String startStr = "" + (event.getStart().getDateTime() != null ? event.getStart().getDateTime() : event.getStart().getDate());
+
                 statusMessageCallback.statusAppendLineDiag("Delete #" + (i+1) +
-                        ". Subject: " + googleCalEntries.get(i).getSummary() +
-                        "  Start Date: " + googleCalEntries.get(i).getStart());
+                        ". Subject: " + event.getSummary() +
+                        "  Start: " + startStr);
                 client.events().delete(destCalendar.getId(), googleCalEntries.get(i).getId()).execute();
             }
             
@@ -597,6 +625,7 @@ String bg = newCalEntry.getBackgroundColor();
                     googleInRangeEntriesWriter.write("  End Date:         " + calEntry.getEnd().getDate() + "\n");
                     googleInRangeEntriesWriter.write("  Updated Date: " + calEntry.getUpdated() + "\n");
                     googleInRangeEntriesWriter.write("  Alarm: " + (calEntry.getReminders() != null ? calEntry.getReminders().toPrettyString() : "none") + "\n");
+                    googleInRangeEntriesWriter.write("  Description: |" + calEntry.getDescription() + "|\n");
 
                     googleInRangeEntriesWriter.write("\n\n");
                 }
@@ -668,7 +697,9 @@ String bg = newCalEntry.getBackgroundColor();
             // option enabled, but then "sync alarms" is turned off. When the
             // second sync happens, we want to delete all the Google entries created
             // the first time (with alarms) and re-create them without alarms.
-statusMessageCallback.statusAppendLineDiag("Compare: UIDs match. Subj: " + googleEntry.getSummary() + "  Start: " + googleEntry.getStart().getDateTime());
+String startStr = "" + (googleEntry.getStart().getDateTime() != null ? googleEntry.getStart().getDateTime() : googleEntry.getStart().getDate());
+statusMessageCallback.statusAppendLineDiag("Compare: UIDs match. Subj: " + googleEntry.getSummary() +
+    "  Start: " + startStr);
 
             // Compare the title/subject
             String lotusSubject = createSubjectText(lotusEntry);
@@ -694,31 +725,36 @@ statusMessageCallback.statusAppendLineDiag("Compare: No Lotus location info. GCa
                 }
             }
 
-            boolean useDefaultReminder = true;
-            if (googleEntry.getReminders() != null) {
-                useDefaultReminder = false;
-            }
-            if (syncAlarms && lotusEntry.getAlarm()) {   
-                // We are syncing alarms, so make sure the Google entry has an alarm.
-                // LNGS always sets alarms as UseDefault=false, so UseDefault=true means
-                // we want to update the entry.
-                // Note: If there is an alarm set, we'll assume the alarm offset is correct.
-                if (useDefaultReminder) {
-statusMessageCallback.statusAppendLineDiag("Compare: No GCal reminder, but has Lotus reminder");
-                    return true;
+            if (syncAlarms) {
+                boolean useDefaultReminder = true;
+                if (googleEntry.getReminders() != null) {
+                    useDefaultReminder = googleEntry.getReminders().getUseDefault();
                 }
-            }
-            else {
-                // We aren't syncing alarms, so make sure the Google entry doesn't
-                // have an alarm specified
-                if (! useDefaultReminder) {
+                if (lotusEntry.getAlarm()) {   
+                    // We are syncing alarms, so make sure the Google entry has an alarm.
+                    // LNGS always sets alarms as UseDefault=false, so UseDefault=true means
+                    // we want to update the entry.
+                    // Note: If there is an alarm set, we'll assume the alarm offset is correct.
+                    if (useDefaultReminder) {
+statusMessageCallback.statusAppendLineDiag("Compare: No GCal reminder, but has Lotus reminder");
+                        return true;
+                    }
+                }
+                else {
+                    // We aren't syncing alarms, so make sure the Google entry doesn't
+                    // have an alarm specified
+                    if (useDefaultReminder) {
 statusMessageCallback.statusAppendLineDiag("Compare: No Lotus reminder, but has GCal reminder");
-                    return true;
+                        return true;
+                    }
                 }
             }
 
+            if (googleEntry.getDescription() == null) {
+                googleEntry.setDescription("");
+            }
             // Compare the Description field of Google entry to what we would build it as
-            if (googleEntry.getDescription() == null || ! googleEntry.getDescription().equals(createDescriptionText(lotusEntry))) {
+            if (! googleEntry.getDescription().equals(createDescriptionText(lotusEntry))) {
 statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
                 return true;
             }
@@ -832,15 +868,16 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
                 }
             }
 
+            boolean allDayEvent = false;
             Date startTime, endTime;
             if (lotusEntry.getEntryType() == LotusNotesCalendarEntry.EntryType.TASK ||
                     lotusEntry.getAppointmentType() == LotusNotesCalendarEntry.AppointmentType.ALL_DAY_EVENT ||
                     lotusEntry.getAppointmentType() == LotusNotesCalendarEntry.AppointmentType.ANNIVERSARY)
             {
+                allDayEvent = true;
+                
                 // Create an all-day event by setting start/end dates with no time portion
                 startTime = lotusEntry.getStartDate(0);
-                // IMPORTANT: For Google to properly create an all-day event, we must add
-                // one day to the end date
                 if (lotusEntry.getEndDateTime() == null)
                     // Use start date since the end date is null
                     endTime = lotusEntry.getStartDate(1);
@@ -873,15 +910,23 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
                         "\nAppointment Type: " + lotusEntry.getAppointmentType());
             }
 
-            com.google.api.client.util.DateTime googleStartTime = new com.google.api.client.util.DateTime(startTime);
             EventDateTime startEdt = new EventDateTime();
-            startEdt.setDateTime(googleStartTime);
-            event.setStart(startEdt);
-
-            com.google.api.client.util.DateTime googleEndTime = new com.google.api.client.util.DateTime(endTime);
             EventDateTime endEdt = new EventDateTime();
-            endEdt.setDateTime(googleEndTime);
-            event.setEnd(endEdt);
+            if (allDayEvent) {
+                // Set the date only, no time portion
+//                startEdt.setDate(new com.google.api.client.util.DateTime(startTime));
+//                endEdt.setDate(new com.google.api.client.util.DateTime(endTime));
+                startEdt.setDate(new com.google.api.client.util.DateTime(true, startTime.getTime(), 0));
+                endEdt.setDate(new com.google.api.client.util.DateTime(true, endTime.getTime(), 0));
+            }
+            else {
+                startEdt.setDateTime(new com.google.api.client.util.DateTime(startTime));
+                endEdt.setDateTime(new com.google.api.client.util.DateTime(endTime));
+            }
+            
+            event.setStart(startEdt);
+            event.setEnd(endEdt);                
+                
             
             
 //statusMessageCallback.statusAppendLineDiag("Subject: " + event.getSummary() +
@@ -890,17 +935,20 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
 //        "  end: " + event.getEnd().getDateTime());
             
 
-            if (syncAlarms && lotusEntry.getAlarm()) {
+            if (syncAlarms) {
                 Event.Reminders reminders = new Event.Reminders();
-                
-                com.google.api.services.calendar.model.EventReminder reminder = new com.google.api.services.calendar.model.EventReminder();
-
-                reminder.setMinutes(lotusEntry.getAlarmOffsetMinsGoogle());
-                reminder.setMethod("popup");
-                ArrayList<com.google.api.services.calendar.model.EventReminder> over = new ArrayList<com.google.api.services.calendar.model.EventReminder>();
-                over.add(reminder);
-                reminders.setOverrides(over);
                 reminders.setUseDefault(false);
+
+                if (lotusEntry.getAlarm()) {
+                    com.google.api.services.calendar.model.EventReminder reminder = new com.google.api.services.calendar.model.EventReminder();
+                    
+                    reminder.setMinutes(lotusEntry.getAlarmOffsetMinsGoogle());
+                    reminder.setMethod("popup");
+                    ArrayList<com.google.api.services.calendar.model.EventReminder> over = new ArrayList<com.google.api.services.calendar.model.EventReminder>();
+                    over.add(reminder);
+                    reminders.setOverrides(over);
+                }
+
                 event.setReminders(reminders);
             }
 
@@ -911,11 +959,13 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
 
             retryCount = 0;
             do {
+                String startStr = "" + (event.getStart().getDateTime() != null ? event.getStart().getDateTime() : event.getStart().getDate());
+
                 try {
                     createdCount++;
                     statusMessageCallback.statusAppendLineDiag("Create #" + createdCount +
                             ". Subject: " + event.getSummary() +
-                            "  Start Date: " + event.getStart().getDateTime() +
+                            "  Start: " + startStr +
                             "  Type: " + lotusEntry.getAppointmentType());
                     client.events().insert(destCalendar.getId(), event).execute();
 
@@ -927,7 +977,7 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
 //                        Thread.sleep(retryDelayMsecs);
 //                    else
                         throw new Exception("Couldn't create Google entry.\nSubject: " + event.getSummary() +
-                            "\nStart Date: " + event.getStart().getDateTime() +
+                            "\nStart: " + startStr +
                             "\nType: " + lotusEntry.getAppointmentType(), ex);
                 }
             } while (true);
@@ -1070,39 +1120,29 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
         statusMessageCallback = value;
     }
 
-    private static final String APPLICATION_NAME = "LNGS";
+    public void setClientSecretRegExFilename(String value) {
+        clientSecretRegExFilename = value;
+    }
 
-    // Directory to store user credentials.
-    private static final java.io.File DATA_STORE_DIR =
-        new java.io.File(System.getProperty("user.home"), ".store/LNGS");
-
-    // Global instance of the {@link DataStoreFactory}. The best practice is to make it a single
-    // globally shared instance across your application.
-    private static FileDataStoreFactory dataStoreFactory;
-
-    // Global instance of the HTTP transport.
-    private static HttpTransport httpTransport;
-
+    protected final String applicationName = "LNGS";
+    
+    protected final String credentialStorePath  = System.getProperty("user.home") +
+            System.getProperty("file.separator")  +
+            ".store" + System.getProperty("file.separator") +
+            "LNGS";
+    
     // Global instance of the JSON factory.
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     
-    // OAuth2 credential
-    Credential credential;
-
     private static com.google.api.services.calendar.Calendar client;
     
     com.google.api.services.calendar.model.Calendar destCalendar;    
-    
-    
-    
-    
     
     protected StatusMessageCallback statusMessageCallback = null;
 
     protected URL mainCalendarFeedUrl = null;
     protected URL privateCalendarFeedUrl = null;
     protected URL destinationCalendarFeedUrl = null;
-//    protected CalendarService service;
 
     protected String googleUsername;
     protected String googlePassword;
@@ -1115,7 +1155,8 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
     protected File googleInRangeEntriesFile = null;
     protected final String googleInRangeEntriesFilename = "GoogleInRangeEntries.txt";
     // Filename with full path
-    protected String googleInRangeEntriesFullFilename;
+    protected String googleInRangeEntriesFullFilename = "";
+    protected String appPath = "";
 
     protected boolean useSSL = true;
     protected boolean diagnosticMode = false;
@@ -1131,7 +1172,9 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
     protected Date minStartDate = null;
     protected Date maxEndDate = null;
 
-    protected final int maxRetryCount = 10;
+    protected String clientSecretRegExFilename = "";
+
+    protected final int maxRetryCount = 5;
     protected final int retryDelayMsecs = 600;
 
     // Google has a maximum limit of around 1600 chars for subject/title lines.

@@ -710,24 +710,16 @@ int s2 = javaDate.compareTo(endDate);
                 lnInRangeEntriesWriter.write("=== " + entry.getSubject() +
                     "\n");
                 lnInRangeEntriesWriter.write("  UID: " + entry.getUID() + "\n");
-                lnInRangeEntriesWriter.write("  Start Date:    " +
-                    entry.getStartDateTime() + "\n");
-                lnInRangeEntriesWriter.write("  End Date:      " +
-                    entry.getEndDateTime() + "\n");
-                lnInRangeEntriesWriter.write("  Modified Date: " +
-                    entry.getModifiedDateTime() + "\n");
-                lnInRangeEntriesWriter.write("  Location: " +
-                    entry.getLocation() + "\n");
-                lnInRangeEntriesWriter.write("  Room: " + entry.getRoom() +
-                    "\n");
-                lnInRangeEntriesWriter.write("  Alarm: " + entry.getAlarm() +
-                    "\n");
-                lnInRangeEntriesWriter.write("  Alarm Offset Mins: " +
-                    entry.getAlarmOffsetMins() + "\n");
-                lnInRangeEntriesWriter.write("  Appointment Type: " +
-                    entry.getAppointmentType() + "\n");
-                lnInRangeEntriesWriter.write("  Entry Type: " +
-                    entry.getEntryType() + "\n");
+                lnInRangeEntriesWriter.write("  Start Date:    " + entry.getStartDateTime() + "\n");
+                lnInRangeEntriesWriter.write("  End Date:      " + entry.getEndDateTime() + "\n");
+                lnInRangeEntriesWriter.write("  Modified Date: " + entry.getModifiedDateTime() + "\n");
+                lnInRangeEntriesWriter.write("  Location: " + entry.getLocation() + "\n");
+                lnInRangeEntriesWriter.write("  Room: " + entry.getRoom() + "\n");
+                lnInRangeEntriesWriter.write("  Alarm: " + entry.getAlarm() + "\n");
+                lnInRangeEntriesWriter.write("  Alarm Offset Mins: " + entry.getAlarmOffsetMins() + "\n");
+                lnInRangeEntriesWriter.write("  Appointment Type: " + entry.getAppointmentType() + "\n");
+                lnInRangeEntriesWriter.write("  Entry Type: " + entry.getEntryType() + "\n");
+                lnInRangeEntriesWriter.write("  Description: |" + entry.getBody() + "|\n");
                 lnInRangeEntriesWriter.write("\n");
             }
         } catch (Exception ex) {

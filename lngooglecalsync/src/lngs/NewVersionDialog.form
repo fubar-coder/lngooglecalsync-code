@@ -26,31 +26,34 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
-              <EmptySpace min="-2" pref="330" max="-2" attributes="0"/>
-              <Component id="jButton_OK" min="-2" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="55" max="-2" attributes="0"/>
-              <Component id="jLabel_Donate" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="32767" attributes="0"/>
-          </Group>
-          <Group type="102" alignment="0" attributes="0">
-              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" attributes="0">
-                      <EmptySpace min="10" pref="10" max="-2" attributes="0"/>
-                      <Component id="jScrollPane2" pref="0" max="32767" attributes="0"/>
-                  </Group>
                   <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
-                              <Component id="jLabel_Heading1" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jLabel_Heading3" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jLabel_HelpFile" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="330" max="-2" attributes="0"/>
+                              <Component id="jButton_OK" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="55" max="-2" attributes="0"/>
+                              <Component id="jLabel_Donate" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <Component id="jLabel_Heading2" min="-2" pref="666" max="-2" attributes="0"/>
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Group type="102" attributes="0">
+                                      <Component id="jLabel_Heading1" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jLabel_Heading3" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jLabel_HelpFile" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <Component id="jLabel_Heading2" min="-2" pref="666" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
                       </Group>
-                      <EmptySpace min="0" pref="69" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="jScrollPane2" pref="735" max="32767" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -67,9 +70,9 @@
                   <Component id="jLabel_HelpFile" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jLabel_Heading2" pref="35" max="32767" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="jScrollPane2" min="-2" pref="242" max="-2" attributes="0"/>
+              <Component id="jLabel_Heading2" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="jScrollPane2" pref="211" max="32767" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="jButton_OK" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -104,7 +107,7 @@
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
               <Font name="Tahoma" size="12" style="0"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="o Fix: Several checks were added to see if Google Calendar is returning a null field.&#xa;o Note: tbd&#xa;o Quote: tbd"/>
+            <Property name="text" type="java.lang.String" value="o Fix: Several changes were made to prevent events from being deleted/recreated over and over due to Description differences.&#xa;o Fix: For some users, all-day events were being created one-day early. A (second) change was made that might fix this problem."/>
           </Properties>
         </Component>
       </SubComponents>
@@ -141,7 +144,7 @@
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel_Heading2">
       <Properties>
-        <Property name="text" type="java.lang.String" value="&lt;html&gt;To upgrade, unzip the new files and copy your old lngsync.config file into the new-version directory.&lt;br&gt;If you modified the old lngsync.vbs or lngsync.sh files, then merge those changes into the new vbs/sh files.&lt;/html&gt;"/>
+        <Property name="text" type="java.lang.String" value="&lt;html&gt;To upgrade:&lt;br&gt;1. Unzip the new files.&lt;br&gt;2. Copy your old lngsync.config file into the new-version directory.&lt;br&gt;3. If you modified the old lngsync.vbs or lngsync.sh files, then merge those changes into the new vbs/sh files.&lt;br&gt;4. Copy your old client_secret.json file into the new-version directory.&lt;/html&gt;"/>
         <Property name="verticalTextPosition" type="int" value="1"/>
       </Properties>
     </Component>

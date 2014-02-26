@@ -53,7 +53,7 @@ public class NewVersionDialog extends javax.swing.JDialog {
 
         jTextPane_Changes.setEditable(false);
         jTextPane_Changes.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
-        jTextPane_Changes.setText("o Fix: Several checks were added to see if Google Calendar is returning a null field.\no Note: tbd\no Quote: tbd");
+        jTextPane_Changes.setText("o Fix: Several changes were made to prevent events from being deleted/recreated over and over due to Description differences.\no Fix: For some users, all-day events were being created one-day early. A (second) change was made that might fix this problem.");
         jScrollPane2.setViewportView(jTextPane_Changes);
 
         jLabel_Heading1.setText("This version is being run for the first time in GUI mode.");
@@ -86,7 +86,7 @@ public class NewVersionDialog extends javax.swing.JDialog {
             }
         });
 
-        jLabel_Heading2.setText("<html>To upgrade, unzip the new files and copy your old lngsync.config file into the new-version directory.<br>If you modified the old lngsync.vbs or lngsync.sh files, then merge those changes into the new vbs/sh files.</html>");
+        jLabel_Heading2.setText("<html>To upgrade:<br>1. Unzip the new files.<br>2. Copy your old lngsync.config file into the new-version directory.<br>3. If you modified the old lngsync.vbs or lngsync.sh files, then merge those changes into the new vbs/sh files.<br>4. Copy your old client_secret.json file into the new-version directory.</html>");
         jLabel_Heading2.setVerticalTextPosition(javax.swing.SwingConstants.TOP);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -94,27 +94,28 @@ public class NewVersionDialog extends javax.swing.JDialog {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(330, 330, 330)
-                .addComponent(jButton_OK)
-                .addGap(55, 55, 55)
-                .addComponent(jLabel_Donate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(10, 10, 10)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel_Heading1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel_Heading3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel_HelpFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jLabel_Heading2, javax.swing.GroupLayout.PREFERRED_SIZE, 666, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 69, Short.MAX_VALUE)))
+                                .addGap(330, 330, 330)
+                                .addComponent(jButton_OK)
+                                .addGap(55, 55, 55)
+                                .addComponent(jLabel_Donate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel_Heading1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jLabel_Heading3)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jLabel_HelpFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jLabel_Heading2, javax.swing.GroupLayout.PREFERRED_SIZE, 666, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 735, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -126,9 +127,9 @@ public class NewVersionDialog extends javax.swing.JDialog {
                     .addComponent(jLabel_Heading3)
                     .addComponent(jLabel_HelpFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel_Heading2, javax.swing.GroupLayout.DEFAULT_SIZE, 35, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 242, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel_Heading2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 211, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton_OK)

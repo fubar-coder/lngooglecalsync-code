@@ -120,6 +120,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             // If this is a new version, then make the window visible by default because we
             // show a new-version message later
+//DLH
             if ( ! config.getApplicationVersion().equals(appVersion)) {
                 setVisible(true);
             }
@@ -283,6 +284,15 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             statusAppendLine("Date range: " + dfShort.format(startDate) + " thru " + dfShort.format(endDate) + " (-" + syncDaysInPast +  " to +" + syncDaysInFuture + " days)");
 
+            // === Check for Client ID file ===
+            GoogleManager googleMgr = new GoogleManager();
+            String clientIdFilename = googleMgr.getClientIdFilename();              
+            if (clientIdFilename.isEmpty()) {
+                statusAppendLine("\n=== ERROR ===\nA Client ID file could not be found." +
+                        "\nRead the Installation instructions in the Help File.\nto learn how to create a Client ID file.\n");
+                return;
+            }
+            
             // === Get the Lotus Notes calendar data
             LotusNotesManager lotusNotesMgr = new LotusNotesManager();
             lotusNotesMgr.setStatusMessageCallback(this);
@@ -321,7 +331,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             // Check whether the user has deselected to use SSL when connecting to google (this is not recommended)
             boolean GoogleConnectUsingSSL = jCheckBox_GoogleSSL.isSelected();
-            GoogleManager googleMgr = new GoogleManager();
             googleMgr.setStatusMessageCallback(this);
             googleMgr.setUsername(jTextField_GoogleUsername.getText());
             googleMgr.setPassword(new String(jPasswordField_GooglePassword.getPassword()));
@@ -1625,6 +1634,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     final String logFilename = "lngsync.log";
     final String logFullPath = "./" + logFilename;
     final String iconAppFullPath = "/images/lngs-icon.png";
+    
     ImageIcon iconApp;
     TrayIcon trayIcon = null;
 
@@ -1633,7 +1643,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.5.1 Beta 3";
+    final String appVersion = "2.5.3";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";
