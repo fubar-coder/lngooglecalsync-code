@@ -20,6 +20,8 @@ import lngs.lotus.LotusNotesCalendarEntry;
 import lngs.util.StatusMessageCallback;
 import java.io.*;
 import java.net.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
@@ -49,46 +51,51 @@ public class GoogleManager {
             else
                 statusMessageCallback.statusAppendLineDiag("Found Client ID file: " + clientIdFilename);
             
-//statusMessageCallback.statusAppendLineDiag("Logging in loc1");
             // Initialize the transport
             HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
 
-            boolean doRetry = false;
+            boolean doRetry = true;
             int retryCount = 0;
             do {
                 try {
-//statusMessageCallback.statusAppendLineDiag("Logging in loc2");
+statusMessageCallback.statusAppendLineDiag("Logging in loc1");
                     // Initialize the data store factory
-                    FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(new java.io.File(credentialStorePath));
+                    if (dataStoreFactory == null) {
+                        dataStoreFactory = new FileDataStoreFactory(new java.io.File(credentialStorePath));
+                    }
             
-//statusMessageCallback.statusAppendLineDiag("Logging in loc3");
+statusMessageCallback.statusAppendLineDiag("Logging in loc2");
                     // Load client secrets
-                    GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY,
-                        new FileReader(clientIdFilename));
+                    if (clientSecrets == null) {
+                        clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(clientIdFilename));
+                    }
             
-//statusMessageCallback.statusAppendLineDiag("Logging in loc4");
+statusMessageCallback.statusAppendLineDiag("Logging in loc3");
                     // Set up authorization code flow
-                    GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                        httpTransport, JSON_FACTORY, clientSecrets,
-                        Collections.singleton(CalendarScopes.CALENDAR)).setDataStoreFactory(dataStoreFactory)
-                        .build();
+//                    GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+//                        httpTransport, JSON_FACTORY, clientSecrets, Collections.singleton(CalendarScopes.CALENDAR))
+//                        .setDataStoreFactory(dataStoreFactory)
+//                        .build();
+                    GoogleAuthorizationCodeFlow.Builder authBuilder = new GoogleAuthorizationCodeFlow.Builder(
+                        httpTransport, JSON_FACTORY, clientSecrets, Collections.singleton(CalendarScopes.CALENDAR));
+statusMessageCallback.statusAppendLineDiag("Logging in loc4");
+                    GoogleAuthorizationCodeFlow flow = authBuilder.setDataStoreFactory(dataStoreFactory).build();
                     
-//statusMessageCallback.statusAppendLineDiag("Logging in loc5");
+statusMessageCallback.statusAppendLineDiag("Logging in loc5");
                     // Authorize with OAuth2
                     Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize(googleUsername);
 
-//statusMessageCallback.statusAppendLineDiag("Logging in loc6");
+statusMessageCallback.statusAppendLineDiag("Logging in loc6");
                     // Set up global Calendar instance
                     client = new com.google.api.services.calendar.Calendar.Builder(
                         httpTransport, JSON_FACTORY, credential).setApplicationName(applicationName).build();
-//statusMessageCallback.statusAppendLineDiag("Logging in loc7");
-
+                    
+statusMessageCallback.statusAppendLineDiag("Logging in loc7");
                     createCalendar();
+                    doRetry = false;
                 } catch (Exception ex) {
                     if (++retryCount > maxRetryCount)
                         throw ex;
-                    Thread.sleep(retryDelayMsecs);
-                    doRetry = true;
 
                     statusMessageCallback.statusAppendLineDiag("Logging in Retry #" + retryCount + ". Encountered " + ex.toString());
                     Thread.sleep(retryDelayMsecs);
@@ -103,6 +110,11 @@ public class GoogleManager {
                         File file = new File(credentialFilename);
                         if (!file.delete()) {
                             statusMessageCallback.statusAppendLineDiag("Failed to delete: " + credentialFilename);
+                        } else {
+// Manually deleting the credential file always seems to resolve the
+// unauthorized client error, but the programatic deletion does not.
+// Add this delay to see if it helps.
+Thread.sleep(1000);
                         }
                     }
                 }
@@ -208,7 +220,6 @@ public class GoogleManager {
         
         if (feed.getItems() != null) {
             for (CalendarListEntry entry : feed.getItems()) {
-String tz = entry.getTimeZone();
                 if (entry.getSummary().equals(destinationCalendarName)) {
                     // Get the Calendar object
                     destCalendar = client.calendars().get(entry.getId()).execute();
@@ -748,6 +759,11 @@ statusMessageCallback.statusAppendLineDiag("Compare: No Lotus reminder, but has 
                         return true;
                     }
                 }
+            } else {
+                if (googleEntry.getReminders() != null && googleEntry.getReminders().getOverrides() != null) {
+statusMessageCallback.statusAppendLineDiag("Compare: Not syncing reminder, but has GCal reminder");
+                    return true;
+                }                
             }
 
             if (googleEntry.getDescription() == null) {
@@ -916,8 +932,16 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
                 // Set the date only, no time portion
 //                startEdt.setDate(new com.google.api.client.util.DateTime(startTime));
 //                endEdt.setDate(new com.google.api.client.util.DateTime(endTime));
-                startEdt.setDate(new com.google.api.client.util.DateTime(true, startTime.getTime(), 0));
-                endEdt.setDate(new com.google.api.client.util.DateTime(true, endTime.getTime(), 0));
+//statusMessageCallback.statusAppendLineDiag("Timezone Offset: " + startTime.getTimezoneOffset() * -1);
+
+//                startEdt.setDate(new com.google.api.client.util.DateTime(true, startTime.getTime(), 0));
+//                endEdt.setDate(new com.google.api.client.util.DateTime(true, endTime.getTime(), 0));
+//                startEdt.setDate(new com.google.api.client.util.DateTime(true, startTime.getTime(), startTime.getTimezoneOffset() * -1));
+//                endEdt.setDate(new com.google.api.client.util.DateTime(true, endTime.getTime(), endTime.getTimezoneOffset() * -1));
+                
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                startEdt.setDate(new com.google.api.client.util.DateTime(dateFormat.format(startTime)));
+                endEdt.setDate(new com.google.api.client.util.DateTime(dateFormat.format(endTime)));
             }
             else {
                 startEdt.setDateTime(new com.google.api.client.util.DateTime(startTime));
@@ -1137,6 +1161,8 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
     private static com.google.api.services.calendar.Calendar client;
     
     com.google.api.services.calendar.model.Calendar destCalendar;    
+    FileDataStoreFactory dataStoreFactory = null;
+    GoogleClientSecrets clientSecrets = null;
     
     protected StatusMessageCallback statusMessageCallback = null;
 

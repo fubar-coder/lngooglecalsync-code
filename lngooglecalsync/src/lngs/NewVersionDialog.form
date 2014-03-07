@@ -107,7 +107,7 @@
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
               <Font name="Tahoma" size="12" style="0"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="o Fix: Several changes were made to prevent events from being deleted/recreated over and over due to Description differences.&#xa;o Fix: For some users, all-day events were being created one-day early. A (second) change was made that might fix this problem."/>
+            <Property name="text" type="java.lang.String" value="o Fix: For some users, all-day events were being created one-day early. A (third) change was made that should fix this problem.&#xa;o Fix: Checking and unchecking Alarms Become Google Reminders in between syncs now works properly.&#xa;o Fix: Made a change that might help with the &quot;hanging while logging into Google&quot; problem."/>
           </Properties>
         </Component>
       </SubComponents>

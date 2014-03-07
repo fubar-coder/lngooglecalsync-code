@@ -285,7 +285,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             statusAppendLine("Date range: " + dfShort.format(startDate) + " thru " + dfShort.format(endDate) + " (-" + syncDaysInPast +  " to +" + syncDaysInFuture + " days)");
 
             // === Check for Client ID file ===
-            GoogleManager googleMgr = new GoogleManager();
             String clientIdFilename = googleMgr.getClientIdFilename();              
             if (clientIdFilename.isEmpty()) {
                 statusAppendLine("\n=== ERROR ===\nA Client ID file could not be found." +
@@ -294,7 +293,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             }
             
             // === Get the Lotus Notes calendar data
-            LotusNotesManager lotusNotesMgr = new LotusNotesManager();
             lotusNotesMgr.setStatusMessageCallback(this);
 
             lotusNotesMgr.setRequiresAuth(true);
@@ -612,8 +610,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             }
         });
 
-        jTextArea_Status.setColumns(20);
         jTextArea_Status.setEditable(false);
+        jTextArea_Status.setColumns(20);
         jTextArea_Status.setRows(5);
         jTextArea_Status.setText("Status messages display here.\n");
         jScrollPane1.setViewportView(jTextArea_Status);
@@ -1638,12 +1636,14 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     ImageIcon iconApp;
     TrayIcon trayIcon = null;
 
+    LotusNotesManager lotusNotesMgr = new LotusNotesManager();
+    GoogleManager googleMgr = new GoogleManager();
     ProxyManager proxy;
     ConfigurationManager config;
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.5.3";
+    final String appVersion = "2.5.4";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";
