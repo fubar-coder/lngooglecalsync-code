@@ -346,19 +346,19 @@ target="HelpFile_files/props007.xml">
 	mso-font-pitch:variable;
 	mso-font-signature:-520081665 -1073717157 41 0 66047 0;}
 @font-face
-	{font-family:Verdana;
-	panose-1:2 11 6 4 3 5 4 4 2 4;
-	mso-font-charset:0;
-	mso-generic-font-family:swiss;
-	mso-font-pitch:variable;
-	mso-font-signature:-1593833729 1073750107 16 0 415 0;}
-@font-face
 	{font-family:Consolas;
 	panose-1:2 11 6 9 2 2 4 3 2 4;
 	mso-font-charset:0;
 	mso-generic-font-family:modern;
 	mso-font-pitch:fixed;
 	mso-font-signature:-520092929 1073806591 9 0 415 0;}
+@font-face
+	{font-family:Verdana;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-1593833729 1073750107 16 0 415 0;}
  /* Style Definitions */
  p.MsoNormal, li.MsoNormal, div.MsoNormal
 	{mso-style-unhide:no;
@@ -1918,12 +1918,8 @@ Arial'><span style='mso-list:Ignore'>13.<span style='font:7.0pt "Times New Roman
 A web browser window will open asking you to authorize Google Calendar access.
 After the authorization is complete, LNGS should be able to connect to Google
 Calendar automatically. If the web browser doesn't open, try deleting the
-credential directory which for Windows is in:<br>
-<span style='mso-spacerun:yes'>  </span>C:\Users\&lt;USERNAME&gt;\.store\LNGS
-or<br>
-<span style='mso-spacerun:yes'>  </span>C:\Documents and
-Settings\&lt;USERNAME&gt;\.store\LNGS<br>
-For OS X and Linux the directory is: ~/.store/LNGS</span></p>
+credential file which is in the main LNGS directory and is named <span
+class=SpellE>client_credential</span>.</span></p>
 
 <p class=MsoNormal><span style='mso-bookmark:_Hlk273686879'><o:p>&nbsp;</o:p></span></p>
 
@@ -2090,8 +2086,8 @@ sync when the application opens.</span></p>
 <p class=MsoNormal><span style='mso-bookmark:_Hlk275760715'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span style='mso-bookmark:_Hlk275760715'>Sync at These
-Minute Offsets — Check this box to turn on the internal scheduler. In the text
-box, enter the offset times when syncing should occur. Separate each offset by a
+Minute Offsets — Check this box to turn on the internal scheduler. In the text box,
+enter the offset times when syncing should occur. Separate each offset by a
 comma. Each offset can be from 0 to 59 minutes <span class=GramE>For</span>
 example, entering &quot;5, 22, 48&quot; into the text box means sync at 5 <span
 class=SpellE>mins</span>, 22 <span class=SpellE>mins</span>, and 48 <span
@@ -2250,8 +2246,8 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span></span></sp
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l12 level1 lfo3'><![if !supportLists]><span
 style='mso-fareast-font-family:Arial'><span style='mso-list:Ignore'>4.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Based
-on which entries were found, make an educated guess about what the server date format
-should be.</p>
+on which entries were found, make an educated guess about what the server date
+format should be.</p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l12 level1 lfo3'><![if !supportLists]><span
 style='mso-fareast-font-family:Arial'><span style='mso-list:Ignore'>5.<span
@@ -2375,8 +2371,8 @@ style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h1>
 
 <p class=MsoNormal>By default, the application runs in GUI mode.</p>
 
-<p class=MsoNormal>Pass the &quot;-silent&quot; parameter to run in command-line
-mode. In this mode, these exit codes can be returned:</p>
+<p class=MsoNormal>Pass the &quot;-silent&quot; parameter to run in
+command-line mode. In this mode, these exit codes can be returned:</p>
 
 <p class=MsoNormal style='text-indent:.5in'>0 = Success</p>
 
@@ -2389,7 +2385,8 @@ exception occurred</p>
 <p class=MsoNormal style='text-indent:.5in'>3 = <span class=GramE>An</span>
 application resource (e.g. an icon) could not be found</p>
 
-<p class=MsoNormal>In command-line mode, an output file named lngsync.log is created.</p>
+<p class=MsoNormal>In command-line mode, an output file named lngsync.log is
+created.</p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
@@ -2519,9 +2516,9 @@ selected in Lotus Notes, then the entry will be marked Private in Google)</p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>Only a certain date range of Lotus Notes entries are synchronized
-to Google.&nbsp;See the Sync Date Range options on the Sync Settings tab.
-Entries outside this range won't be copied to Google.</p>
+<p class=MsoNormal>Only a certain date range of Lotus Notes entries are
+synchronized to Google.&nbsp;See the Sync Date Range options on the Sync
+Settings tab. Entries outside this range won't be copied to Google.</p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
@@ -2550,8 +2547,8 @@ and pull out the lib dir. These are the external libs to use.<o:p></o:p></span><
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l3 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:Arial'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>Point your IDE to all the libs
-and <span class=GramE>all the</span> source.<o:p></o:p></span></p>
+style='mso-fareast-font-family:"Times New Roman"'>Point your IDE to all the
+libs and <span class=GramE>all the</span> source.<o:p></o:p></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l3 level1 lfo6'><![if !supportLists]><span
 style='mso-fareast-font-family:Arial'><span style='mso-list:Ignore'>4.<span
@@ -3049,9 +3046,9 @@ style='color:#6600CC'>method or time specified: 2592000 seconds</span></b><span
 style='color:#6600CC'>&quot;<b>.<o:p></o:p></b></span></p>
 
 <p class=MsoNormal>Google calendar entries can only have a reminder of 28 days
-or less. This is verified by manually creating a Google calendar entry and
-trying to set the reminder greater than 28 days (it won't allow you to set it).
-This error is caused by a Lotus entry having a reminder more than 28 days. Change
+or less. This is verified by manually creating a Google calendar entry and trying
+to set the reminder greater than 28 days (it won't allow you to set it). This
+error is caused by a Lotus entry having a reminder more than 28 days. Change
 the Lotus reminder to less than 28 days to resolve the problem.</p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
@@ -3147,10 +3144,10 @@ style='color:#6600CC'><o:p></o:p></span></span></p>
 
 <span style='mso-bookmark:_Hlk263417644'></span>
 
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>If
-the Lotus Notes entry has a start time of 1pm, but the Google calendar entry
-shows up at a different time, e.g. 3pm, then make sure all your Google time zones
-are consistent. There are multiple time zones in Google calendar: your user <span
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>If the
+Lotus Notes entry has a start time of 1pm, but the Google calendar entry shows
+up at a different time, e.g. 3pm, then make sure all your Google time zones are
+consistent. There are multiple time zones in Google calendar: your user <span
 class=SpellE>tz</span> and a <span class=SpellE>tz</span> for each calendar. If
 you get into Calendar Settings, click the General tab to see your user <span
 class=SpellE>tz</span>. On the Calendars tab, click the LNGS calendar link to
@@ -3173,19 +3170,81 @@ style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h1>
 
 <p class=MsoNormal style='tab-stops:177.2pt'><a name="_Hlk262980546"></a><a
 name="_Hlk263671647"></a><a name="_Hlk275870555"></a><a name="_Hlk286838511"></a><a
-name="_Hlk287002841"></a><a name="OLE_LINK11"></a><a name="OLE_LINK12"><span
-style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
-style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
-style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'></span></span></span></span></span></span></a><span
-class=GramE><span style='mso-bookmark:OLE_LINK12'><span style='mso-bookmark:
-OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span style='mso-bookmark:
-_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:
-_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'>2.5.4<span
-style='mso-spacerun:yes'>  </span>2014</span></span></span></span></span></span></span></span><span
+name="_Hlk287002841"></a><a name="OLE_LINK11"></a><a name="OLE_LINK12"></a><a
+name="OLE_LINK40"></a><a name="OLE_LINK39"><span style='mso-bookmark:OLE_LINK40'><span
 style='mso-bookmark:OLE_LINK12'><span style='mso-bookmark:OLE_LINK11'><span
 style='mso-bookmark:_Hlk287002841'><span style='mso-bookmark:_Hlk286838511'><span
 style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:_Hlk263671647'><span
-style='mso-bookmark:_Hlk262980546'>/3/6&nbsp;Dean Hill</span></span></span></span></span></span></span></p>
+style='mso-bookmark:_Hlk262980546'></span></span></span></span></span></span></span></span></a><span
+class=GramE><span style='mso-bookmark:OLE_LINK39'><span style='mso-bookmark:
+OLE_LINK40'><span style='mso-bookmark:OLE_LINK12'><span style='mso-bookmark:
+OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span style='mso-bookmark:
+_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:
+_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'>2.5.5<span
+style='mso-spacerun:yes'>  </span>2014</span></span></span></span></span></span></span></span></span></span><span
+style='mso-bookmark:OLE_LINK39'><span style='mso-bookmark:OLE_LINK40'><span
+style='mso-bookmark:OLE_LINK12'><span style='mso-bookmark:OLE_LINK11'><span
+style='mso-bookmark:_Hlk287002841'><span style='mso-bookmark:_Hlk286838511'><span
+style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:_Hlk263671647'><span
+style='mso-bookmark:_Hlk262980546'>/3/23&nbsp;Dean Hill</span></span></span></span></span></span></span></span></span></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l8 level1 lfo10;
+tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK39'><span
+style='mso-bookmark:OLE_LINK40'><span style='mso-bookmark:OLE_LINK12'><span
+style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
+style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
+style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><a
+name="OLE_LINK42"></a><a name="OLE_LINK41"><span style='mso-bookmark:OLE_LINK42'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Enhancement: The Google authorization credential
+file is now stored in the LNGS directory, in the file named </span></a><span
+class=SpellE><span style='mso-bookmark:OLE_LINK41'><span style='mso-bookmark:
+OLE_LINK42'>client_credential</span></span></span><span style='mso-bookmark:
+OLE_LINK41'><span style='mso-bookmark:OLE_LINK42'>. You can delete the old
+credential directory. For Windows it was &quot;C:\Users\&lt;USERNAME&gt;\.store&quot;
+or &quot;C:\Documents and Settings\&lt;USERNAME&gt;\.store&quot;. For OS X and
+Linux it was <span class=SpellE>was</span> &quot;~/.store&quot;.<o:p></o:p></span></span></span></span></span></span></span></span></span></span></span></p>
+
+<span style='mso-bookmark:OLE_LINK42'></span><span style='mso-bookmark:OLE_LINK41'></span>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l8 level1 lfo10;
+tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK39'><span
+style='mso-bookmark:OLE_LINK40'><span style='mso-bookmark:OLE_LINK12'><span
+style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
+style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
+style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Fix: Unchecking &quot;Alarms Become Google
+Reminders&quot; should now work properly.<o:p></o:p></span></span></span></span></span></span></span></span></span></p>
+
+<p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l8 level1 lfo10;
+tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK39'><span
+style='mso-bookmark:OLE_LINK40'><span style='mso-bookmark:OLE_LINK12'><span
+style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
+style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
+style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Fix: In lngsync.vbs, removed the double quotes
+around the Lotus jar filename. This caused problems for some users and was not
+needed.</span></span></span></span></span></span></span></span></span></p>
+
+<p class=MsoNormal style='tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK39'><span
+style='mso-bookmark:OLE_LINK40'><span style='mso-bookmark:OLE_LINK12'><span
+style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
+style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
+style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><o:p>&nbsp;</o:p></span></span></span></span></span></span></span></span></span></p>
+
+<span style='mso-bookmark:OLE_LINK40'></span><span style='mso-bookmark:OLE_LINK39'></span>
+
+<p class=MsoNormal style='tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK12'><span
+style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
+style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
+style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><span
+class=GramE>2.5.4<span style='mso-spacerun:yes'>  </span>2014</span>/3/6&nbsp;Dean
+Hill<o:p></o:p></span></span></span></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l8 level1 lfo10;
 tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK12'><span
@@ -3215,7 +3274,7 @@ style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><![i
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Fix: Made a change that might help with the
-&quot;hanging while logging into Google&quot; problem.</span></span></span></span></span></span></span></p>
+&quot;hanging while logging into Google&quot; problem.<o:p></o:p></span></span></span></span></span></span></span></p>
 
 <p class=MsoNormal style='tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK12'><span
 style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
@@ -3227,7 +3286,7 @@ style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
 style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
 style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><span
 class=GramE>2.5.3<span style='mso-spacerun:yes'>  </span>2014</span>/2/25&nbsp;Dean
-Hill<o:p></o:p></span></span></span></span></span></span></span></p>
+Hill</span></span></span></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l8 level1 lfo10;
 tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK12'><span
@@ -3238,7 +3297,7 @@ style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Fix: Several changes were made to prevent events
 from being <span class=GramE>deleted/recreated</span> over and over due to
-Description differences.<o:p></o:p></span></span></span></span></span></span></span></p>
+Description differences.</span></span></span></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l8 level1 lfo10;
 tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK12'><span
@@ -3248,7 +3307,7 @@ style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><![i
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Fix: For some users, all-day events were being
-created one-day early. A (second) change was made that might fix this problem.<o:p></o:p></span></span></span></span></span></span></span></p>
+created one-day early. A (second) change was made that might fix this problem.</span></span></span></span></span></span></span></p>
 
 <p class=MsoNormal style='tab-stops:177.2pt'><span style='mso-bookmark:OLE_LINK12'><span
 style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
@@ -3474,7 +3533,7 @@ style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><o:p
 style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
 style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
 style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><span
-class=GramE>2.4<span style='mso-spacerun:yes'>  </span>2012</span>/7/23
+class=GramE>2.4<span style='mso-spacerun:yes'>  </span>2013</span>/7/23
 &nbsp;Dean Hill</span></span></span></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l8 level1 lfo10'><span
@@ -3589,7 +3648,8 @@ style='mso-bookmark:_Hlk262980546'><![if !supportLists]><span style='font-family
 Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol'><span
 style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Quote: It has been said that democracy is the
-worst form of government except all the others that have been tried. - Winston Churchill</span></span></span></span></span></span></span></p>
+worst form of government except all the others that have been tried. - Winston
+Churchill</span></span></span></span></span></span></span></p>
 
 <p class=MsoNormal><span style='mso-bookmark:OLE_LINK12'><span
 style='mso-bookmark:OLE_LINK11'><span style='mso-bookmark:_Hlk287002841'><span
@@ -3721,10 +3781,11 @@ style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:_Hlk263671647'><spa
 style='mso-bookmark:_Hlk262980546'><![if !supportLists]><span style='font-family:
 Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol'><span
 style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Enhancement: The lngsync.sh script was enhanced to
-work with OS X versions 10.8 and greater. This was done because starting with
-OS X 10.8, the location of Lotus Notes changed from &quot;<span class=SpellE>Notes.app</span>&quot;
-to &quot;Lotus <span class=SpellE>Notes.app</span>&quot;. Thanks to Ray Wilson.</span></span></span></span></span></span></span></p>
+</span></span></span><![endif]>Enhancement: The lngsync.sh script was enhanced
+to work with OS X versions 10.8 and greater. This was done because starting
+with OS X 10.8, the location of Lotus Notes changed from &quot;<span
+class=SpellE>Notes.app</span>&quot; to &quot;Lotus <span class=SpellE>Notes.app</span>&quot;.
+Thanks to Ray Wilson.</span></span></span></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l8 level1 lfo10'><span
 style='mso-bookmark:OLE_LINK12'><span style='mso-bookmark:OLE_LINK11'><span
@@ -3792,9 +3853,9 @@ style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:_Hlk263671647'><spa
 style='mso-bookmark:_Hlk262980546'><![if !supportLists]><span style='font-family:
 Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol'><span
 style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Enhancement: On the Connection Settings tab there
-is now a &quot;Detect Lotus Settings&quot; button which will help new users
-determine their correct Lotus Notes values.</span></span></span></span></span></p>
+</span></span></span><![endif]>Enhancement: On the Connection Settings tab
+there is now a &quot;Detect Lotus Settings&quot; button which will help new
+users determine their correct Lotus Notes values.</span></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l8 level1 lfo10'><span
 style='mso-bookmark:_Hlk287002841'><span style='mso-bookmark:_Hlk286838511'><span
@@ -4227,8 +4288,8 @@ class=GramE>1.12.1<span style='mso-spacerun:yes'>  </span>2011</span>/3/3
  <li class=MsoNormal style='mso-list:l6 level1 lfo13;tab-stops:list .5in'><span
      style='mso-bookmark:_Hlk287002841'><span style='mso-bookmark:_Hlk286838511'><span
      style='mso-bookmark:_Hlk275870555'><span style='mso-bookmark:_Hlk263671647'><span
-     style='mso-bookmark:_Hlk262980546'><a name="_Hlk286861810">Fix: The lngsync.sh
-     script contained a bug in v1.12 which has been fixed.</a></span></span></span></span></span><span
+     style='mso-bookmark:_Hlk262980546'><a name="_Hlk286861810">Fix: The
+     lngsync.sh script contained a bug in v1.12 which has been fixed.</a></span></span></span></span></span><span
      style='mso-bookmark:_Hlk286861810'></span><span style='mso-bookmark:_Hlk287002841'><span
      style='mso-bookmark:_Hlk286838511'><span style='mso-bookmark:_Hlk275870555'><span
      style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'><span
@@ -4458,9 +4519,9 @@ style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;
 </span></span></span><![endif]>Fix: Google has a limit for the length of entry
 descriptions, around 8100 characters. Lotus has a limit greater than Google.
 When the app compared a Lotus entry with a 9000 char description to the
-corresponding Google entry (which had its description truncated to 8100), the app
-would incorrectly assume they didn't match. Now, descriptions are truncated to
-8000 </span></a><span class=SpellE><span style='mso-bookmark:OLE_LINK23'><span
+corresponding Google entry (which had its description truncated to 8100), the
+app would incorrectly assume they didn't match. Now, descriptions are truncated
+to 8000 </span></a><span class=SpellE><span style='mso-bookmark:OLE_LINK23'><span
 style='mso-bookmark:OLE_LINK24'>chars</span></span></span><span
 style='mso-bookmark:OLE_LINK23'><span style='mso-bookmark:OLE_LINK24'> before
 being added to Google and before the Lotus-to-Google compare is performed.</span></span></span></span></span></p>
@@ -4817,8 +4878,8 @@ style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Enhancement: There is a new setting in the
 settings file named <span class=SpellE>ConfigVersion</span>. This will be used
-to track what version/format of the <span class=SpellE>config</span> file is
-being read.</span></span></p>
+to track what version/format of the <span class=SpellE>config</span> file is being
+read.</span></span></p>
 
 <p class=MsoNormal><span style='mso-bookmark:_Hlk263671647'><span
 style='mso-bookmark:_Hlk262980546'><o:p>&nbsp;</o:p></span></span></p>
@@ -4913,9 +4974,9 @@ style='mso-bookmark:_Hlk262980546'>1.3<span class=GramE>&nbsp; 2010</span>/6/14
  <li class=MsoNormal style='mso-list:l6 level1 lfo13;tab-stops:list .5in'><span
      style='mso-bookmark:_Hlk263671647'><span style='mso-bookmark:_Hlk262980546'>Enhancement:
      The Sync Settings tab has a checkbox to sync the entry description. Lotus
-     descriptions can contain formatting like colored text and underlining.
-     However, Google descriptions can only contain plain text, so all
-     formatting is removed.</span></span><span style='mso-bookmark:_Hlk263671647'><span
+     descriptions can contain formatting like colored text and underlining. However,
+     Google descriptions can only contain plain text, so all formatting is
+     removed.</span></span><span style='mso-bookmark:_Hlk263671647'><span
      style='mso-bookmark:_Hlk262980546'><span style='mso-fareast-font-family:
      "Times New Roman"'> <o:p></o:p></span></span></span></li>
  <li class=MsoNormal style='mso-list:l6 level1 lfo13;tab-stops:list .5in'><span
@@ -5071,17 +5132,19 @@ class=GramE>&nbsp; 2010</span>/5/24 &nbsp;Dean Hill</span></p>
 
 <p class=MsoNormal><span class=GramE>0.4 &nbsp;2010</span>/4/26 &nbsp;Dean Hill</p>
 
-<p class=MsoNormal>A large number of changes were made. Including:</p>
+<p class=MsoNormal>A large number of changes were made, including the
+following.</p>
 
 <ul style='margin-top:0in' type=disc>
  <li class=MsoNormal style='mso-list:l10 level1 lfo15;tab-stops:list .5in'><span
-     style='mso-fareast-font-family:"Times New Roman"'>Both local and server
-     mail files are now supported.<o:p></o:p></span></li>
+     style='mso-fareast-font-family:"Times New Roman"'>Enhancement: Both local
+     and server mail files are now supported.<o:p></o:p></span></li>
  <li class=MsoNormal style='mso-list:l10 level1 lfo15;tab-stops:list .5in'><span
-     style='mso-fareast-font-family:"Times New Roman"'>Repeating events are supported.<o:p></o:p></span></li>
+     style='mso-fareast-font-family:"Times New Roman"'>Enhancement: Repeating
+     events are supported.<o:p></o:p></span></li>
  <li class=MsoNormal style='mso-list:l10 level1 lfo15;tab-stops:list .5in'><span
-     style='mso-fareast-font-family:"Times New Roman"'>Some error handling was
-     improved.<o:p></o:p></span></li>
+     style='mso-fareast-font-family:"Times New Roman"'>Enhancement: Some error
+     handling was improved.<o:p></o:p></span></li>
 </ul>
 
 </div>

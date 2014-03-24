@@ -1,7 +1,11 @@
+// This source code is released under the GPL v3 license, http://www.gnu.org/licenses/gpl.html.
+// This file is part of the LNGS project: http://sourceforge.net/projects/lngooglecalsync.
+
 package lngs.util;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.commons.codec.binary.Base64;
@@ -18,11 +22,13 @@ public class ConfigurationManager {
     /**
      * Write configuration file.
      * Important: after a writeConfig, the in-memory configuration is not valid anymore until
-     * a subsequent readConfig() is performed ...
+     * a subsequent readConfig() is performed.
      * @throws Exception due to I/O
      */
-    public void writeConfig() throws Exception {
-        // Starting with v2 of the properties file, we "encrypt" passwords but keep them plain in memory
+    public void writeConfig() throws IOException {
+// This line will delete a property from the config file
+//        config.remove(PROP_GOOGLE_PASSWORD);
+        // Starting with v2 of the properties file, we encode passwords but keep them plain in memory
         config.setProperty(PROP_GOOGLE_PASSWORD, encodePassword(getGooglePassword()));
         config.setProperty(PROP_PROXY_PASSWORD, encodePassword(getGoogleProxyPassword()));
         config.setProperty(PROP_LOTUS_NOTES_PASSWORD, encodePassword(getLotusNotesPassword()));
@@ -38,10 +44,10 @@ public class ConfigurationManager {
         config.store(new FileOutputStream(configFilename), null);
     }
 
-    public void readConfig() throws Exception {
+    public void readConfig() throws IOException {
         config.load(new FileInputStream(configFilename));
         if (getConfigVersion() >= 2) {
-            // Starting with v2 of the properties file, we "encrypt" passwords but keep them plain in memory
+            // Starting with v2 of the properties file, we encode passwords but keep them plain in memory
             config.setProperty(PROP_GOOGLE_PASSWORD, decodePassword(getGooglePassword()));
             config.setProperty(PROP_PROXY_PASSWORD, decodePassword(getGoogleProxyPassword()));
             config.setProperty(PROP_LOTUS_NOTES_PASSWORD, decodePassword(getLotusNotesPassword()));
@@ -203,7 +209,7 @@ public class ConfigurationManager {
         return getStringProperty(PROP_GOOGLE_USERNAME);
     }
 
-    public String getGooglePassword() throws Exception {
+    public String getGooglePassword() {
         return getStringProperty(PROP_GOOGLE_PASSWORD);
     }
 
@@ -219,7 +225,7 @@ public class ConfigurationManager {
         return getStringProperty(PROP_PROXY_USERNAME);
     }
 
-    public String getGoogleProxyPassword() throws Exception {
+    public String getGoogleProxyPassword() {
         return getStringProperty(PROP_PROXY_PASSWORD);
     }
 
@@ -240,7 +246,7 @@ public class ConfigurationManager {
         return value;
     }
 
-    public String getLotusNotesPassword() throws Exception {
+    public String getLotusNotesPassword() {
         return getStringProperty(PROP_LOTUS_NOTES_PASSWORD);
     }
 
@@ -357,10 +363,11 @@ public class ConfigurationManager {
 
     protected String encodePassword(String password) {
         byte[] encoded = Base64.encodeBase64(password.getBytes());
+
         return new String(encoded);
     }
 
-    protected String decodePassword(String encodedPassword ) throws Exception {
+    protected String decodePassword(String encodedPassword ) {
         byte[] data = Base64.decodeBase64(encodedPassword);
         
         return new String(data);

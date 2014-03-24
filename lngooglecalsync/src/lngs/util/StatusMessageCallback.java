@@ -1,3 +1,6 @@
+// This source code is released under the GPL v3 license, http://www.gnu.org/licenses/gpl.html.
+// This file is part of the LNGS project: http://sourceforge.net/projects/lngooglecalsync.
+
 package lngs.util;
 
 /**

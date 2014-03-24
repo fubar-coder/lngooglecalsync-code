@@ -735,7 +735,7 @@
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel3">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Email Address"/>
+                <Property name="text" type="java.lang.String" value="ID/Email Address"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="jTextField_GoogleUsername">

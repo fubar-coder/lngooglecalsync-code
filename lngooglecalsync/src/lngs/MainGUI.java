@@ -1,4 +1,5 @@
-// Original code by Shin Sterneck. Code maintained and significantly modified by Dean Hill.
+// Original code by Shin Sterneck. Code maintained and
+// significantly modified by Dean Hill.
 //
 // This file is part of the Lotus Notes to Google Calendar Synchronizer application.
 //
@@ -43,16 +44,17 @@ import java.awt.event.*;
 import java.math.BigDecimal;
 import javax.swing.*;
 import lngs.util.ConfigurationManager;
+import lngs.util.LngsException;
 
 
 public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback {
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) {
         if (args.length == 0) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     lngs.MainGUI gui = new MainGUI();
-                    if (exitCode != EXIT_SUCCESS)
-                        System.exit(exitCode);
+                    if (exitCode != ExitCodes.SUCCESS)
+                        System.exit(exitCode.ordinal());
                         
                     gui.setupSystemTray();
                     gui.setLocationRelativeTo(null);  // Center window on primary monitor
@@ -62,10 +64,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         } else if (args[0].equals("-silent")) {
             // Run in "silent" command-line mode
             new MainGUI().runCommandLine();
-            System.exit(exitCode);
+            System.exit(exitCode.ordinal());
         } else {
             System.out.println("Usage: mainGUI <options>\n\tIf no options are specified, then the application starts in GUI mode.\n\t-silent  Performs synchronization with existing settings in non-GUI mode.");
-            System.exit(EXIT_INVALID_PARM);
+            System.exit(ExitCodes.INVALID_PARM.ordinal());
         }
     }
 
@@ -78,7 +80,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             URL urlIcon = getClass().getResource(iconAppFullPath);
             if (urlIcon == null) {
                 System.out.println("The program icon could not be found at this resource path: " + iconAppFullPath);
-                System.exit(EXIT_MISSING_RESOURCE);
+                System.exit(ExitCodes.MISSING_RESOURCE.ordinal());
             }
             iconApp = new ImageIcon(urlIcon);
             setIconImage(iconApp.getImage());
@@ -125,7 +127,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 setVisible(true);
             }
         } catch (Exception ex) {
-            exitCode = EXIT_EXCEPTION;
+            exitCode = ExitCodes.EXCEPTION;
             showException(ex);
         }        
     }
@@ -212,7 +214,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             isSilentMode = true;
             doSync();
         } catch (Exception ex) {
-            exitCode = EXIT_EXCEPTION;
+            exitCode = ExitCodes.EXCEPTION;
             System.out.println("\nGeneral problem: " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -222,7 +224,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     /**
      * Perform synchronization independent of GUI or non-GUI mode.
      */
-    public void doSync() throws Exception {
+    public void doSync() {
         long startTime = 0L;
         DateFormat dfShort = DateFormat.getDateInstance(DateFormat.SHORT);
         DateFormat tfDefault = DateFormat.getTimeInstance();
@@ -287,8 +289,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             // === Check for Client ID file ===
             String clientIdFilename = googleMgr.getClientIdFilename();              
             if (clientIdFilename.isEmpty()) {
-                statusAppendLine("\n=== ERROR ===\nA Client ID file could not be found." +
-                        "\nRead the Installation instructions in the Help File.\nto learn how to create a Client ID file.\n");
+                statusAppendLine("\n=== ERROR ===\nA Google Client ID file could not be found." +
+                        "\nRead the Installation instructions in the Help File \nto learn how to create a Client ID file.\n");
                 return;
             }
             
@@ -328,12 +330,12 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             }
 
             // Check whether the user has deselected to use SSL when connecting to google (this is not recommended)
-            boolean GoogleConnectUsingSSL = jCheckBox_GoogleSSL.isSelected();
+//            boolean GoogleConnectUsingSSL = jCheckBox_GoogleSSL.isSelected();
             googleMgr.setStatusMessageCallback(this);
             googleMgr.setUsername(jTextField_GoogleUsername.getText());
             googleMgr.setPassword(new String(jPasswordField_GooglePassword.getPassword()));
             googleMgr.setCalendarName(jTextField_DestinationCalendarName.getText());
-            googleMgr.setUseSSL(GoogleConnectUsingSSL);
+//            googleMgr.setUseSSL(GoogleConnectUsingSSL);
             googleMgr.setDiagnosticMode(jCheckBox_DiagnosticMode.isSelected());
             googleMgr.setSyncDescription(jCheckBox_SyncDescription.isSelected());
             googleMgr.setSyncAlarms(jCheckBox_SyncAlarms.isSelected());
@@ -867,7 +869,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
         jLabel4.setText("Password");
 
-        jLabel3.setText("Email Address");
+        jLabel3.setText("ID/Email Address");
 
         jTextField_GoogleUsername.setText("user@google.com");
 
@@ -1186,7 +1188,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             return;
         }
 
-        System.exit(EXIT_SUCCESS);
+        System.exit(ExitCodes.SUCCESS.ordinal());
     }//GEN-LAST:event_formWindowClosed
 
     private void jCheckBox_enableProxyStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jCheckBox_enableProxyStateChanged
@@ -1351,10 +1353,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             if (jCheckBox_enableProxy.isSelected()) {
                 if (jTextField_proxyIP.getText().isEmpty()) {
-                    throw new Exception("The Proxy Server IP/Name cannot be blank.");
+                    throw new LngsException("The Proxy Server IP/Name cannot be blank.");
                 }
                 if (jTextField_proxyPort.getText().isEmpty()) {
-                   throw new Exception("The Proxy Port cannot be blank.");
+                   throw new LngsException("The Proxy Port cannot be blank.");
                 }
             }
 
@@ -1374,12 +1376,12 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     }
 
     // Validate the sync minute offsets setting.
-    private void validateSyncMinOffsets() throws Exception {
+    private void validateSyncMinOffsets() throws LngsException {
         // Parse and convert our list of sync scheduler offsets
         // The input string will be like this: "15, 30, 45"
         String[] syncOffsets = jTextField_SyncMinOffsets.getText().split(",");
         if (syncOffsets.length == 0 || (syncOffsets.length == 1 && syncOffsets[0].trim().isEmpty()))
-            throw new Exception("The Sync Min Offsets list is empty.  Specify at least one value.");
+            throw new LngsException("The Sync Min Offsets list is empty.  Specify at least one value.");
 
         syncMinOffsetsList.clear();
         for (String strOffset : syncOffsets) {
@@ -1391,10 +1393,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                     syncMinOffsetsList.add(intOffset);
                 }
                 else {
-                    throw new Exception("In the Sync Min Offsets list, the offset value of '" + strOffset + "' is not between 0 and 59.");
+                    throw new LngsException("In the Sync Min Offsets list, the offset value of '" + strOffset + "' is not between 0 and 59.");
                 }
             } catch (NumberFormatException ex) {
-                    throw new Exception("In the Sync Min Offsets list, the offset value of '" + strOffset + "' is not a valid integer.");
+                    throw new LngsException("In the Sync Min Offsets list, the offset value of '" + strOffset + "' is not a valid integer.");
             }
         }
 
@@ -1405,7 +1407,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
 
     @SuppressWarnings("static-access")
-    private void saveSettings() throws Exception {
+    private void saveSettings() throws IOException {
         config.setLotusNotesServer(jTextField_LotusNotesServer.getText());
         config.setLotusNotesServerDateFormat(jTextField_LotusNotesServerDateFormat.getText());
         config.setLotusNotesServerIsLocal(jCheckBox_LotusNotesServerIsLocal.isSelected());
@@ -1643,7 +1645,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.5.4";
+    final String appVersion = "2.5.5";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";
@@ -1656,11 +1658,13 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     int syncDaysInFuture = 0;
 
     // An exit code of 0 is success. All other values are failure.
-    static final int EXIT_SUCCESS = 0;
-    static final int EXIT_INVALID_PARM = 1;
-    static final int EXIT_EXCEPTION = 2;
-    static final int EXIT_MISSING_RESOURCE = 3;
-    static int exitCode = EXIT_SUCCESS;
+    enum ExitCodes { SUCCESS, INVALID_PARM, EXCEPTION, MISSING_RESOURCE };
+    static ExitCodes exitCode = ExitCodes.SUCCESS;
+//    static final int EXIT_SUCCESS = 0;
+//    static final int EXIT_INVALID_PARM = 1;
+//    static final int EXIT_EXCEPTION = 2;
+//    static final int EXIT_MISSING_RESOURCE = 3;
+//    static int exitCode = EXIT_SUCCESS;
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton_Cancel;

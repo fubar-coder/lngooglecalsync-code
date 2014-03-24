@@ -1,3 +1,6 @@
+// This source code is released under the GPL v3 license, http://www.gnu.org/licenses/gpl.html.
+// This file is part of the LNGS project: http://sourceforge.net/projects/lngooglecalsync.
+
 package lngs;
 
 import java.awt.*;
@@ -53,7 +56,7 @@ public class NewVersionDialog extends javax.swing.JDialog {
 
         jTextPane_Changes.setEditable(false);
         jTextPane_Changes.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
-        jTextPane_Changes.setText("o Fix: For some users, all-day events were being created one-day early. A (third) change was made that should fix this problem.\no Fix: Checking and unchecking Alarms Become Google Reminders in between syncs now works properly.\no Fix: Made a change that might help with the \"hanging while logging into Google\" problem.");
+        jTextPane_Changes.setText("o Enhancement: The Google authorization credential file is now stored in the LNGS directory, in the file named client_credential. You can delete the old credential directory. For Windows it was \"C:\\Users\\<USERNAME>\\.store\" or \"C:\\Documents and Settings\\<USERNAME>\\.store\". For OS X and Linux it was was \"~/.store\".\no Fix: Unchecking \"Alarms Become Google Reminders\" should now work properly.\no Fix: In lngsync.vbs, removed the double quotes around the Lotus jar filename. This caused problems for some users and was not needed.");
         jScrollPane2.setViewportView(jTextPane_Changes);
 
         jLabel_Heading1.setText("This version is being run for the first time in GUI mode.");

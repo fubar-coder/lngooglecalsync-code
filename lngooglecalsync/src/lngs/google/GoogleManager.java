@@ -1,6 +1,10 @@
+// This source code is released under the GPL v3 license, http://www.gnu.org/licenses/gpl.html.
+// This file is part of the LNGS project: http://sourceforge.net/projects/lngooglecalsync.
+
 package lngs.google;
 
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.StoredCredential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -9,6 +13,7 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.store.DataStore;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.CalendarList;
@@ -45,11 +50,11 @@ public class GoogleManager {
         try {
             statusMessageCallback.statusAppendStart("Logging into Google");
 
-            String clientIdFilename = getClientIdFilename();              
-            if (clientIdFilename.isEmpty())
+            String clientIdFullFilename = getClientIdFilename();              
+            if (clientIdFullFilename.isEmpty())
                 throw new Exception("Client ID file could not be found.");
             else
-                statusMessageCallback.statusAppendLineDiag("Found Client ID file: " + clientIdFilename);
+                statusMessageCallback.statusAppendLineDiag("Found Client ID file: " + clientIdFullFilename);
             
             // Initialize the transport
             HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
@@ -61,15 +66,16 @@ public class GoogleManager {
 statusMessageCallback.statusAppendLineDiag("Logging in loc1");
                     // Initialize the data store factory
                     if (dataStoreFactory == null) {
-                        dataStoreFactory = new FileDataStoreFactory(new java.io.File(credentialStorePath));
+//                        dataStoreFactory = new FileDataStoreFactory(new java.io.File(credentialStorePath));
+                        dataStoreFactory = new FileDataStoreFactory(new java.io.File(appPath));
                     }
             
 statusMessageCallback.statusAppendLineDiag("Logging in loc2");
                     // Load client secrets
                     if (clientSecrets == null) {
-                        clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(clientIdFilename));
+                        clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(clientIdFullFilename));
                     }
-            
+                    
 statusMessageCallback.statusAppendLineDiag("Logging in loc3");
                     // Set up authorization code flow
 //                    GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
@@ -79,7 +85,9 @@ statusMessageCallback.statusAppendLineDiag("Logging in loc3");
                     GoogleAuthorizationCodeFlow.Builder authBuilder = new GoogleAuthorizationCodeFlow.Builder(
                         httpTransport, JSON_FACTORY, clientSecrets, Collections.singleton(CalendarScopes.CALENDAR));
 statusMessageCallback.statusAppendLineDiag("Logging in loc4");
-                    GoogleAuthorizationCodeFlow flow = authBuilder.setDataStoreFactory(dataStoreFactory).build();
+                    DataStore<StoredCredential> ds = dataStoreFactory.getDataStore(CLIENT_CREDENTIAL_FILENAME);
+                    GoogleAuthorizationCodeFlow flow = authBuilder.setCredentialDataStore(ds).build();
+//                    GoogleAuthorizationCodeFlow flow = authBuilder.setDataStoreFactory(dataStoreFactory).build();
                     
 statusMessageCallback.statusAppendLineDiag("Logging in loc5");
                     // Authorize with OAuth2
@@ -299,7 +307,6 @@ String bg = newCalEntry.getBackgroundColor();
 
             int cntDeleted = googleCalEntries.size();
                     
-// TODO: Try to do a batch delete.
             for (int i = 0; i < googleCalEntries.size(); i++) {
                 Event event = googleCalEntries.get(i);
                 String startStr = "" + (event.getStart().getDateTime() != null ? event.getStart().getDateTime() : event.getStart().getDate());
@@ -311,124 +318,12 @@ String bg = newCalEntry.getBackgroundColor();
             }
             
             return cntDeleted;
-            
-            
-            
-            
-//            URL feedUrl = getDestinationCalendarUrl();
-//
-//            int retryCount = 0;
-//
-//            // Delete all the entries as a batch delete
-//            CalendarEventFeed batchRequest = new CalendarEventFeed();
-//
-//            for (int i = 0; i < googleCalEntries.size(); i++) {
-//                CalendarEventEntry entry = googleCalEntries.get(i);
-//
-//                BatchUtils.setBatchId(entry, Integer.toString(i));
-//                BatchUtils.setBatchOperationType(entry, BatchOperationType.DELETE);
-//                batchRequest.getEntries().add(entry);
-//
-//                String startDateStr;
-//                startDateStr = "";
-//                if (entry.getTimes().size() > 0)
-//                    startDateStr = entry.getTimes().get(0).getStartTime().toString();
-//
-//                statusMessageCallback.statusAppendLineDiag("Delete #" + (i+1) +
-//                        ". Subject: " + entry.getTitle().getPlainText() +
-//                        "  Start Date: " + startDateStr);
-//            }
-//
-//            CalendarEventFeed feed = null;
-//            do {
-//                try {
-//                    feed = service.getFeed(feedUrl, CalendarEventFeed.class);
-//                } catch (com.google.gdata.util.ServiceException ex) {
-//                    feed = null;
-//                    // If there is a network problem, retry a few times
-//                    if (++retryCount > maxRetryCount)
-//                        throw ex;
-//                    Thread.sleep(retryDelayMsecs);
-//                    
-//                    statusMessageCallback.statusAppendLineDiag("Get Feed for Delete Retry #" + retryCount + ". Encountered " + ex.toString());
-//                    
-//                    if (retryCount == 1) {
-//                        // Write out the stack trace
-//                        StringWriter sw = new StringWriter();
-//                        ex.printStackTrace(new PrintWriter(sw));
-//                        statusMessageCallback.statusAppendLineDiag(sw.toString());                        
-//                    }                    
-//                }
-//            } while (feed == null);
-//
-//            // Get the batch link URL
-//            Link batchLink = feed.getLink(Link.Rel.FEED_BATCH, Link.Type.ATOM);
-//
-//            // Send the batch request with retries
-//            CalendarEventFeed batchResponse = null;
-//            retryCount = 0;
-//            do {
-//                try {
-//                    batchResponse = service.batch(new URL(batchLink.getHref()), batchRequest);
-//                } catch (com.google.gdata.util.ServiceException ex) {
-//                    batchResponse = null;
-//                    // If there is a network problem, retry a few times
-//                    if (++retryCount > maxRetryCount)
-//                        throw ex;
-//                    Thread.sleep(retryDelayMsecs);
-//
-//                    statusMessageCallback.statusAppendLineDiag("Get Batch Response for Delete Retry #" + retryCount + ". Encountered " + ex.toString());
-//                    
-//                    if (retryCount == 1) {
-//                        // Write out the stack trace
-//                        StringWriter sw = new StringWriter();
-//                        ex.printStackTrace(new PrintWriter(sw));
-//                        statusMessageCallback.statusAppendLineDiag(sw.toString());                        
-//                    }                    
-//                }
-//            } while (batchResponse == null);
-//
-//            CheckBatchDeleteResults(batchResponse, googleCalEntries);
-//
-//            return batchRequest.getEntries().size();
         } catch (Exception ex) {
             throw ex;
         }
     }
 
-    
-    /**
-     * Throw an exception if there were any errors in the batch delete.
-     * @param batchResponse - The batch response.
-     * @param googleCalEntries - The original list of items that we tried to delete.
-     */
-/*    protected void CheckBatchDeleteResults(CalendarEventFeed batchResponse, ArrayList<CalendarEventEntry> googleCalEntries) throws Exception {
-
-        // Ensure that all the operations were successful
-        boolean isSuccess = true;
-
-        StringBuffer batchFailureMsg = new StringBuffer("These entries in the batch delete failed:");
-        for (CalendarEventEntry entry : batchResponse.getEntries()) {
-            String batchId = BatchUtils.getBatchId(entry);
-            if (!BatchUtils.isSuccess(entry)) {
-                isSuccess = false;
-                BatchStatus status = BatchUtils.getBatchStatus(entry);
-
-                CalendarEventEntry entryOrig = googleCalEntries.get(new Integer(batchId));
-
-                batchFailureMsg.append("\nID: " + batchId + "  Reason: " + status.getReason() +
-                        "  Subject: " + entryOrig.getTitle().getPlainText() +
-                        "  Start Date: " + entryOrig.getTimes().get(0).getStartTime().toString());
-            }
-        }
-
-        if (!isSuccess) {
-            throw new Exception(batchFailureMsg.toString());
-        }
-
-    }
-*/
-    
+      
     /**
      * Get all the Google calendar entries for a specific date range.
      * @return The found entries.
@@ -441,12 +336,6 @@ String bg = newCalEntry.getBackgroundColor();
             com.google.api.client.util.DateTime minDate = new com.google.api.client.util.DateTime(minStartDate);
             com.google.api.client.util.DateTime maxDate = new com.google.api.client.util.DateTime(maxEndDate);
             
-//            Events feed = client.events().list(destCalendar.getId())
-//                    .setTimeZone(destCalendar.getTimeZone())
-//                    .setTimeMin(minDate)
-//                    .setTimeMax(maxDate)
-//                    .execute();
-                
             ArrayList<Event> allCalEntries =  new ArrayList<Event>();
             Events events = new Events();
 
@@ -460,9 +349,9 @@ String bg = newCalEntry.getBackgroundColor();
             do {
                 try {
                     // Execute the query and get the response
-// Set the maximum number of results to return for the query.
-// Note: The server may choose to provide fewer results, but will never provide
-// more than the requested maximum.
+                    // Set the maximum number of results to return for the query.
+                    // Note: The server may choose to provide fewer results, but will never provide
+                    // more than the requested maximum.
                     events = client.events().list(destCalendar.getId())
                             .setTimeZone(destCalendar.getTimeZone())
                             .setTimeMin(minDate)
@@ -501,11 +390,6 @@ String bg = newCalEntry.getBackgroundColor();
                 pageToken = events.getNextPageToken();
             } while (pageToken != null);
             
-//            ArrayList<Event> allCalEntries =  new ArrayList<Event>(feed.getItems());
-            
-            
-//            statusMessageCallback.statusAppendLineDiag(allCalEntries.size() + " entries returned by query.");
-
             // Remove all entries marked canceled. Canceled entries aren't visible
             // in Google calendar, and trying to delete them programatically will
             // cause an exception.
@@ -518,81 +402,6 @@ String bg = newCalEntry.getBackgroundColor();
                 }
             }
             
-            
-/*            
-            ArrayList<CalendarEventEntry> allCalEntries = new ArrayList<CalendarEventEntry>();
-
-            URL feedUrl = getDestinationCalendarUrl();
-
-            CalendarQuery myQuery = new CalendarQuery(feedUrl);
-
-            myQuery.setMinimumStartTime(new com.google.gdata.data.DateTime(minStartDate.getTime()));
-            // Make the end time far into the future so we delete everything we aren't syncing
-            myQuery.setMaximumStartTime(com.google.gdata.data.DateTime.parseDateTime("2099-12-31T23:59:59"));
-
-            // Set the maximum number of results to return for the query.
-            // Note: A GData server may choose to provide fewer results, but will never provide
-            // more than the requested maximum.
-            myQuery.setMaxResults(5000);
-            int startIndex = 1;
-            int entriesReturned = 0;
-            int queryCount = 0;
-            int retryCount = 0;
-
-            CalendarEventFeed resultFeed;
-
-            // Run our query as many times as necessary to get all the
-            // Google calendar entries we want
-            while (true) {
-                myQuery.setStartIndex(startIndex);
-
-                try {
-                    // Execute the query and get the response
-                    resultFeed = service.query(myQuery, CalendarEventFeed.class);
-                } catch (com.google.gdata.util.ServiceException ex) {
-                    // If there is a network problem while connecting to Google, retry a few times
-                    if (++retryCount > maxRetryCount) {
-                        throw ex;
-                    }
-                    Thread.sleep(retryDelayMsecs);
-
-                    statusMessageCallback.statusAppendLineDiag("Query Retry #" + retryCount + ". Encountered " + ex.toString());
-                    
-                    if (retryCount == 1) {
-                        // Write out the stack trace
-                        StringWriter sw = new StringWriter();
-                        ex.printStackTrace(new PrintWriter(sw));
-                        statusMessageCallback.statusAppendLineDiag(sw.toString());                        
-                    }
-                    
-                    continue;
-                }
-
-                queryCount++;
-                entriesReturned = resultFeed.getEntries().size();
-                statusMessageCallback.statusAppendLineDiag(entriesReturned + " entries returned by query #" + queryCount + ".");
-                if (entriesReturned == 0)
-                    // We've hit the end of the list
-                    break;
-
-                // Add the returned entries to our local list
-                allCalEntries.addAll(resultFeed.getEntries());
-
-                startIndex = startIndex + entriesReturned;
-            }
-
-            // Remove all entries marked canceled. Canceled entries aren't visible
-            // in Google calendar, and trying to delete them programatically will
-            // cause an exception.
-            for (int i = 0; i < allCalEntries.size(); i++) {
-                CalendarEventEntry entry = allCalEntries.get(i);
-
-                if (entry.getStatus().equals(BaseEventEntry.EventStatus.CANCELED)) {
-                    allCalEntries.remove(entry);
-                    i--;
-                }
-            }
-*/
             if (diagnosticMode)
                 writeInRangeEntriesToFile(allCalEntries);
 
@@ -736,17 +545,20 @@ statusMessageCallback.statusAppendLineDiag("Compare: No Lotus location info. GCa
                 }
             }
 
+            boolean hasLngsReminder = false;
+            // If true, then a non-default override reminder has previously been set by LNGS
+            if (googleEntry.getReminders() != null && 
+                    !googleEntry.getReminders().getUseDefault() &&
+                    googleEntry.getReminders().getOverrides() != null) {
+                hasLngsReminder = true;
+            }
             if (syncAlarms) {
-                boolean useDefaultReminder = true;
-                if (googleEntry.getReminders() != null) {
-                    useDefaultReminder = googleEntry.getReminders().getUseDefault();
-                }
                 if (lotusEntry.getAlarm()) {   
                     // We are syncing alarms, so make sure the Google entry has an alarm.
                     // LNGS always sets alarms as UseDefault=false, so UseDefault=true means
                     // we want to update the entry.
                     // Note: If there is an alarm set, we'll assume the alarm offset is correct.
-                    if (useDefaultReminder) {
+                    if (!hasLngsReminder) {
 statusMessageCallback.statusAppendLineDiag("Compare: No GCal reminder, but has Lotus reminder");
                         return true;
                     }
@@ -754,13 +566,13 @@ statusMessageCallback.statusAppendLineDiag("Compare: No GCal reminder, but has L
                 else {
                     // We aren't syncing alarms, so make sure the Google entry doesn't
                     // have an alarm specified
-                    if (useDefaultReminder) {
+                    if (hasLngsReminder) {
 statusMessageCallback.statusAppendLineDiag("Compare: No Lotus reminder, but has GCal reminder");
                         return true;
                     }
                 }
             } else {
-                if (googleEntry.getReminders() != null && googleEntry.getReminders().getOverrides() != null) {
+                if (hasLngsReminder) {
 statusMessageCallback.statusAppendLineDiag("Compare: Not syncing reminder, but has GCal reminder");
                     return true;
                 }                
@@ -784,29 +596,29 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
 
 
     // This method is for testing purposes.
-    public void createSampleCalEntry() {
-        LotusNotesCalendarEntry cal = new LotusNotesCalendarEntry();
-        cal.setSubject("DeanRepeatTest");
-        cal.setEntryType(LotusNotesCalendarEntry.EntryType.APPOINTMENT);
-        cal.setAppointmentType("3");
-        cal.setLocation("nolocation");
-        cal.setRoom("noroom");
-
-        Date dstartDate, dendDate;
-        Calendar now = Calendar.getInstance();
-        now.set(Calendar.YEAR, 2010);
-        now.set(Calendar.MONTH, 7);  // Month is relative zero
-        now.set(Calendar.DAY_OF_MONTH, 2);
-        now.set(Calendar.HOUR_OF_DAY, 10);
-        now.set(Calendar.MINUTE, 0);
-        now.set(Calendar.SECOND, 0);
-        dstartDate = now.getTime();
-        cal.setStartDateTime(dstartDate);
-
-        now.set(Calendar.HOUR_OF_DAY, 11);
-        dendDate = now.getTime();
-        cal.setEndDateTime(dendDate);
-
+//    public void createSampleCalEntry() {
+//        LotusNotesCalendarEntry cal = new LotusNotesCalendarEntry();
+//        cal.setSubject("DeanRepeatTest");
+//        cal.setEntryType(LotusNotesCalendarEntry.EntryType.APPOINTMENT);
+//        cal.setAppointmentType("3");
+//        cal.setLocation("nolocation");
+//        cal.setRoom("noroom");
+//
+//        Date dstartDate, dendDate;
+//        Calendar now = Calendar.getInstance();
+//        now.set(Calendar.YEAR, 2010);
+//        now.set(Calendar.MONTH, 7);  // Month is relative zero
+//        now.set(Calendar.DAY_OF_MONTH, 2);
+//        now.set(Calendar.HOUR_OF_DAY, 10);
+//        now.set(Calendar.MINUTE, 0);
+//        now.set(Calendar.SECOND, 0);
+//        dstartDate = now.getTime();
+//        cal.setStartDateTime(dstartDate);
+//
+//        now.set(Calendar.HOUR_OF_DAY, 11);
+//        dendDate = now.getTime();
+//        cal.setEndDateTime(dendDate);
+//
 //        DateTime startTime, endTime;
 //
 //        CalendarEventEntry event = new CalendarEventEntry();
@@ -844,7 +656,7 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
 //            service.insert(getDestinationCalendarUrl(), event);
 //        } catch (Exception e) {
 //        }
-    }
+//    }
 
 
     /**
@@ -951,18 +763,9 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
             event.setStart(startEdt);
             event.setEnd(endEdt);                
                 
-            
-            
-//statusMessageCallback.statusAppendLineDiag("Subject: " + event.getSummary() +
-//        "  Start Date: " + event.getStart() +
-//        "  start1: " + event.getStart().getDateTime() +
-//        "  end: " + event.getEnd().getDateTime());
-            
-
+            Event.Reminders reminders = new Event.Reminders();
+            reminders.setUseDefault(false);
             if (syncAlarms) {
-                Event.Reminders reminders = new Event.Reminders();
-                reminders.setUseDefault(false);
-
                 if (lotusEntry.getAlarm()) {
                     com.google.api.services.calendar.model.EventReminder reminder = new com.google.api.services.calendar.model.EventReminder();
                     
@@ -972,9 +775,10 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
                     over.add(reminder);
                     reminders.setOverrides(over);
                 }
-
-                event.setReminders(reminders);
             }
+            // Always set the GCal reminder. It will either be empty or have
+            // the Lotus value.
+            event.setReminders(reminders);
 
             // If the Lotus Notes entry has the Mark Private checkbox checked, then
             // mark the entry private in Google
@@ -995,14 +799,9 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
 
                     break;
                 } catch (Exception ex) {
-                    // If there is a network problem (a ServiceException) while connecting to Google, retry a few times
-                    // before throwing an exception.
-//                    if (ex instanceof com.google.gdata.util.ServiceException && ++retryCount <= maxRetryCount)
-//                        Thread.sleep(retryDelayMsecs);
-//                    else
-                        throw new Exception("Couldn't create Google entry.\nSubject: " + event.getSummary() +
-                            "\nStart: " + startStr +
-                            "\nType: " + lotusEntry.getAppointmentType(), ex);
+                    throw new Exception("Couldn't create Google entry.\nSubject: " + event.getSummary() +
+                        "\nStart: " + startStr +
+                        "\nType: " + lotusEntry.getAppointmentType(), ex);
                 }
             } while (true);
         }
@@ -1100,9 +899,9 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
         destCalendar = null;
     }
 
-    public void setUseSSL(boolean value) {
-        useSSL = value;
-    }
+//    public void setUseSSL(boolean value) {
+//        useSSL = value;
+//    }
 
     public void setSyncDescription(boolean value) {
         syncDescription = value;
@@ -1154,9 +953,10 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
             System.getProperty("file.separator")  +
             ".store" + System.getProperty("file.separator") +
             "LNGS";
+    protected static final String CLIENT_CREDENTIAL_FILENAME = "client_credential";
     
     // Global instance of the JSON factory.
-    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    protected static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     
     private static com.google.api.services.calendar.Calendar client;
     
@@ -1184,7 +984,7 @@ statusMessageCallback.statusAppendLineDiag("Compare: Descriptions differ");
     protected String googleInRangeEntriesFullFilename = "";
     protected String appPath = "";
 
-    protected boolean useSSL = true;
+//    protected boolean useSSL = true;
     protected boolean diagnosticMode = false;
 
     protected boolean syncDescription = false;
