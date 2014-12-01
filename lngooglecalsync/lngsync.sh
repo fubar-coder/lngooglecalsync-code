@@ -31,17 +31,21 @@ if [ "$OS_TYPE" = "Linux" ]; then
 fi
 
 # Configure for Apple OS X
+JAVA_PATH_OSX=
 if [ "$OS_TYPE" = "Darwin" ]; then
-	if [ -d "/Applications/Lotus Notes.app/Contents/MacOS" ]; then
+	if [ -d "/Applications/IBM Notes.app/Contents/MacOS" ]; then
+		export NOTES_PATH=/Applications/IBM\ Notes.app/Contents/MacOS			
+	elif [ -d "/Applications/Lotus Notes.app/Contents/MacOS" ]; then
 		export NOTES_PATH=/Applications/Lotus\ Notes.app/Contents/MacOS
 	elif [ -d "/Applications/Notes.app/Contents/MacOS" ]; then
 		export NOTES_PATH=/Applications/Notes.app/Contents/MacOS
-	elif [ -d "/Applications/IBM Notes.app/Contents/MacOS" ]; then
-		export NOTES_PATH=/Applications/IBM\ Notes.app/Contents/MacOS			
 	else
 		echo "The OS X Lotus Notes installation directory could NOT be determined. Exiting."
 		exit 1
 	fi
+
+	# Use the OS X java_home utility to find a 32-bit version of Java
+	JAVA_PATH_OSX=`/usr/libexec/java_home -d32`
 
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$NOTES_PATH"
 	export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:"$NOTES_PATH"
@@ -70,13 +74,19 @@ if [ -z "$JAVA_PATH" ]; then
 	# If the default Lotus Notes Java exists, use it
 	if [ -e "$NOTES_PATH/jvm/bin/java" ]; then
 		JAVA_PATH="$NOTES_PATH/jvm/bin/java"
+	# If an OS X version of Java is present, use it
+	elif [ -e "$JAVA_PATH_OSX" ]; then
+		JAVA_PATH="$JAVA_PATH_OSX"
+	# If JAVA_HOME points to a version of Java, use it
+	elif [ -e "$JAVA_HOME/bin/java" ]; then
+		JAVA_PATH="$JAVA_HOME/bin/java"
+	# Let the OS find Java via the PATH
 	else
-		# Let the OS find Java via the PATH
 		JAVA_PATH="java"
 	fi
 fi
 
-JAVA_COMMAND="$JAVA_PATH -d32 "
+JAVA_COMMAND="$JAVA_PATH "
 
 
 if [ -n $1 ] && [ "$1" = "-silent" ]; then

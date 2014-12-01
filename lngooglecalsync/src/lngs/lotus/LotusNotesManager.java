@@ -13,6 +13,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import java.util.*;
+import lngs.util.LngsException;
 
 
 public class LotusNotesManager {
@@ -100,8 +101,7 @@ public class LotusNotesManager {
      *    Pass in null to retrieve from a local mail file.
      * @param mailFileName The mail file to read from, e.g. "mail/johnsmith.nsf".
      */
-    public ArrayList<LotusNotesCalendarEntry> getCalendarEntries()
-        throws Exception {
+    public ArrayList<LotusNotesCalendarEntry> getCalendarEntries() throws LngsException, IOException {
         boolean wasNotesThreadInitialized = false;
         ArrayList<LotusNotesCalendarEntry> calendarEntries = new ArrayList<LotusNotesCalendarEntry>();
         LotusNotesCalendarEntry cal = null;
@@ -146,8 +146,7 @@ public class LotusNotesManager {
                 }                
             }
             if (db == null) {
-                throw new Exception(
-                    "Couldn't create Lotus Notes Database object.");
+                throw new LngsException("Couldn't create Lotus Notes Database object.");
             }
 
             String strDateFormat;
@@ -173,13 +172,14 @@ public class LotusNotesManager {
             // Query Lotus Notes to get calendar entries in our date range.
             // To understand this SELECT, go to http://publib.boulder.ibm.com/infocenter/domhelp/v8r0/index.jsp
             // and search for the various keywords. Here is an overview:
+            //   !@IsAvailable($Conflict) will exclude entries that conflicts with another.
+            //     LN doesn't show conflict entries and we should ignore them.
             //   @IsAvailable(CalendarDateTime) is true if the LN document is a calendar entry
             //   @Explode splits a string based on the delimiters ",; "
             //   The operator *= is a permuted equal operator. It compares all entries on
-            //   the left side to all entries on the right side. If there is at least one
-            //   match, then true is returned.
-            // This is the current query:            
-            String calendarQuery = "SELECT (@IsAvailable(CalendarDateTime) & (@Explode(CalendarDateTime) *= @Explode(@TextToTime(\"" +
+            //     the left side to all entries on the right side. If there is at least one
+            //     match, then true is returned.
+            String calendarQuery = "SELECT (!@IsAvailable($Conflict) & @IsAvailable(CalendarDateTime) & (@Explode(CalendarDateTime) *= @Explode(@TextToTime(\"" +
                 dateFormat.format(startDate) + " - " +
                 dateFormat.format(endDate) + "\"))))";
 
@@ -238,27 +238,23 @@ public class LotusNotesManager {
             calendarEntries = getCalendarEntryList(queryResults);
 
             return calendarEntries;
-        } catch (Exception ex) {
-            String exMsg = "There was a problem reading Lotus Notes calendar entries.";
-
-            if (ex instanceof NotesException) {
-                exMsg = exMsg + "\nNotesException ID: " +
-                    ((NotesException) ex).id;
-            }
+        } catch (NotesException ex) {
+            String exMsg = "There was a problem reading Lotus Notes calendar entries."
+                + "\nNotesException ID: " + ((NotesException) ex).id;
 
             if ((cal != null) && (cal.getSubject() != null)) {
-                throw new Exception(exMsg +
+                throw new LngsException(exMsg +
                     "\nThe subject of the entry being processed: " +
                     cal.getSubject(), ex);
             } else {
-                throw new Exception(exMsg, ex);
+                throw new LngsException(exMsg, ex);
             }
         } finally {
             // If true, the NotesThread failed to init. The LN dlls probably weren't found.
             // NOTE: Make sure this check is the first line in the finally block. When the
             // init fails, some of the finally block may get skipped.
             if (!wasNotesThreadInitialized) {
-                throw new Exception(
+                throw new LngsException(
                     "There was a problem initializing the Lotus Notes thread.\nMake sure the Lotus dll/so/dylib directory is in your path.\nAlso look at the Troubleshooting section of the Help file.");
             }
 
@@ -280,7 +276,7 @@ public class LotusNotesManager {
     /**
      * Manually load the Lotus Notes thread class to see if it can be found.
      */
-    protected void loadNotesThreadClass() throws Exception {
+    protected void loadNotesThreadClass() throws LngsException {
         try {
             // Some users, especially on OS X, have trouble locating Notes.jar (which
             // needs to be in the classpath) and the supporting dll/so/dylib files (which
@@ -288,10 +284,9 @@ public class LotusNotesManager {
             // classes to make sure we can find Notes.jar.
             // The next try/catch block (with the sinitThread() call) will check if
             // the supporing libs can be found.
-            ClassLoader.getSystemClassLoader()
-                       .loadClass("lotus.domino.NotesThread");
-        } catch (Exception ex) {
-            throw new Exception("The Lotus Notes Java interface file (Notes.jar) could not be found.\nMake sure Notes.jar is in your classpath.",
+            ClassLoader.getSystemClassLoader().loadClass("lotus.domino.NotesThread");
+        } catch (ClassNotFoundException ex) {
+            throw new LngsException("The Lotus Notes Java interface file (Notes.jar) could not be found.\nMake sure Notes.jar is in your classpath.",
                 ex);
         }
     }
@@ -299,8 +294,7 @@ public class LotusNotesManager {
     /**
      * Return the date format used on the Domino server.
      */
-    protected String getLotusServerDateFormat(Session session)
-        throws NotesException {
+    protected String getLotusServerDateFormat(Session session) throws NotesException {
         // Get our start and end query dates in Lotus Notes format. We will query
         // using the localized format for the dates (which is what Lotus expects).
         // E.g. in England the date may be 31/1/2011, but in the US it is 1/31/2011.
@@ -326,7 +320,7 @@ public class LotusNotesManager {
      * Return a list of LotusNotesCalendarEntry objects.
      */
     protected ArrayList<LotusNotesCalendarEntry> getCalendarEntryList(
-        DocumentCollection queryResults) throws Exception {
+        DocumentCollection queryResults) throws NotesException, IOException {
         boolean addDoc;
         ArrayList<LotusNotesCalendarEntry> calendarEntries = new ArrayList<LotusNotesCalendarEntry>();
         LotusNotesCalendarEntry cal;
@@ -336,6 +330,7 @@ public class LotusNotesManager {
 
         int cntEntry = 1;
 
+            
         // Loop through all entries returned
         while (doc != null) {
             Item lnItem;
@@ -347,7 +342,7 @@ public class LotusNotesManager {
             }
 
             cal = new LotusNotesCalendarEntry();
-
+            
             lnItem = doc.getFirstItem("Subject");
 
             if (!isItemEmpty(lnItem)) {
@@ -355,6 +350,7 @@ public class LotusNotesManager {
             } else {
                 cal.setSubject("<no subject>");
             }
+//statusMessageCallback.statusAppendLineDiag("Processing subject: " + cal.getSubject());
 
             //statusMessageCallback.statusAppendLineDiag("Subject: " + cal.getSubject());
             //if (diagnosticMode) {
@@ -469,13 +465,17 @@ public class LotusNotesManager {
                     lnItem = doc.getFirstItem("StartDateTime");
 
                     if (!isItemEmpty(lnItem)) {
-                        startDates = lnItem.getValueDateTimeArray();
+                        if (lnItem.getType() == Item.DATETIMES) {
+                            startDates = lnItem.getValueDateTimeArray();
+                        }                            
                     }
 
                     lnItem = doc.getFirstItem("EndDateTime");
 
                     if (!isItemEmpty(lnItem)) {
-                        endDates = lnItem.getValueDateTimeArray();
+                        if (lnItem.getType() == Item.DATETIMES) {
+                            endDates = lnItem.getValueDateTimeArray();
+                        }
                     }
 
                     if (startDates != null) {
@@ -501,13 +501,6 @@ public class LotusNotesManager {
                                     calendarEntries.add(cal.clone());
                                 } else {
                                     DateFormat dfShort = DateFormat.getDateInstance(DateFormat.SHORT);
-                                                                        
-//                                    statusMessageCallback.statusAppendStart("Out of date range REPEAT. Entry Start: " + dfShort.format(cal.getStartDateTime()) +
-//                                            "  Subject: " + cal.getSubject());                                    
-int s1 = javaDate.compareTo(startDate);
-int s2 = javaDate.compareTo(endDate);
-//statusMessageCallback.statusAppendLineDiag("!@! Out of date range. Start: " + javaDate +
-//        "  Subject: " + cal.getSubject());
                                 }
                             }
                         }
@@ -536,16 +529,7 @@ int s2 = javaDate.compareTo(endDate);
                     // Only add the entry if it is within our sync date range
                     if (isDateInRange(cal.getStartDateTime())) {
                         calendarEntries.add(cal);
-//statusMessageCallback.statusAppendLineDiag("Is in date range. Start: " + cal.getStartDateTime() +
-//                                            "  Subject: " + cal.getSubject());
                     }
-
-                    //                                else {
-                    //DateFormat dfShort = DateFormat.getDateInstance(DateFormat.SHORT);
-                    //                                    
-                    //statusMessageCallback.statusAppendStart("Out of date range SINGLE. Entry Start: " + dfShort.format(cal.getStartDateTime()) +
-                    //        "  Subject: " + cal.getSubject());                                    
-                    //                                }
                 }
             }
 
@@ -559,8 +543,8 @@ int s2 = javaDate.compareTo(endDate);
     /**
      * Try to detect some Lotus Notes settings and return them.
      */
-    public LotusNotesSettings detectLotusSettings(String lnPassword)
-        throws Exception {
+    public LotusNotesSettings detectLotusSettings(String lnPassword) throws LngsException, NotesException
+         {
         boolean wasNotesThreadInitialized = false;
         String s = "";
         LotusNotesSettings lns = new LotusNotesSettings();
@@ -593,14 +577,14 @@ int s2 = javaDate.compareTo(endDate);
             if (db == null) {
                 lns.hasLocalServer = false;
             }
-        } catch (Exception ex) {
+        } catch (NotesException ex) {
             throw ex;
         } finally {
             // If true, the NotesThread failed to init. The LN dlls probably weren't found.
             // NOTE: Make sure this check is the first line in the finally block. When the
             // init fails, some of the finally block may get skipped.
             if (!wasNotesThreadInitialized) {
-                throw new Exception(
+                throw new LngsException(
                     "There was a problem initializing the Lotus Notes thread.\nMake sure the Lotus dll/so/dylib directory is in your path.\nAlso look at the Troubleshooting section of the Help file.");
             }
 
@@ -621,11 +605,6 @@ int s2 = javaDate.compareTo(endDate);
             return true;
         }
 
-//        if ((entryDate != null) && (entryDate.compareTo(startDate) >= 0) &&
-//                (entryDate.compareTo(endDate) <= 0)) {
-//            return true;
-//        }
-
         return false;
     }
 
@@ -644,19 +623,16 @@ int s2 = javaDate.compareTo(endDate);
 
         if (doc.isDeleted()) {
             lnFoundEntriesWriter.write("  Doc is flagged Deleted.\n\n");
-
             return;
         }
 
         if (doc.isEncrypted()) {
             lnFoundEntriesWriter.write("  Doc is flagged Encrypted.\n\n");
-
             return;
         }
 
         if (doc.isSigned()) {
             lnFoundEntriesWriter.write("  Doc is flagged Signed.\n\n");
-
             return;
         }
 
@@ -694,8 +670,7 @@ int s2 = javaDate.compareTo(endDate);
     }
 
     public void writeInRangeEntriesToFile(
-        List<LotusNotesCalendarEntry> calendarEntries)
-        throws Exception {
+        List<LotusNotesCalendarEntry> calendarEntries) throws IOException {
         try {
             lnInRangeEntriesFile = new File(lnInRangeEntriesFullFilename);
             lnInRangeEntriesWriter = new BufferedWriter(new FileWriter(
@@ -725,7 +700,7 @@ int s2 = javaDate.compareTo(endDate);
                 lnInRangeEntriesWriter.write("  Description: |" + entry.getBody() + "|\n");
                 lnInRangeEntriesWriter.write("\n");
             }
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             throw ex;
         } finally {
             if (lnInRangeEntriesWriter != null) {
@@ -749,7 +724,7 @@ int s2 = javaDate.compareTo(endDate);
                     ((lnItem != null) && lnItem.getText().isEmpty())) {
                 return true;
             }
-        } catch (Exception ex) {
+        } catch (NotesException ex) {
             // An error means we couldn't read the Item, so consider it empty
             return true;
         }

@@ -31,7 +31,6 @@ import java.text.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-//import java.net.URL;
 import java.net.*;
 import java.awt.Cursor;
 import java.awt.TrayIcon;
@@ -42,9 +41,12 @@ import java.awt.MenuItem;
 import java.awt.AWTException;
 import java.awt.event.*;
 import java.math.BigDecimal;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.*;
 import lngs.util.ConfigurationManager;
 import lngs.util.LngsException;
+import lotus.domino.NotesException;
 
 
 public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback {
@@ -122,21 +124,36 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             // If this is a new version, then make the window visible by default because we
             // show a new-version message later
-//DLH
-            if ( ! config.getApplicationVersion().equals(appVersion)) {
+            if ( ! config.getApplicationVersion().equals(appVersion) || jCheckBox_dontSaveSensitiveData.isSelected()) {
                 setVisible(true);
+                setExtendedState(NORMAL);
+
+                if ( jCheckBox_dontSaveSensitiveData.isSelected()) {
+                    promptForPasswords();
+                }
             }
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             exitCode = ExitCodes.EXCEPTION;
             showException(ex);
         }        
     }
 
     private void preInitComponents() {
+        Exception caughtEx = null;
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ex) {
-            Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, "There was an error setting the window's look-and-feel.", ex);
+        } catch (InstantiationException ex) {
+            caughtEx = ex;
+        } catch (IllegalAccessException ex) {
+            caughtEx = ex;
+        } catch (UnsupportedLookAndFeelException ex) {
+            caughtEx = ex;
+        } catch (ClassNotFoundException ex) {
+            caughtEx = ex;
+        } finally {
+            if (caughtEx != null) {
+                Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, "There was an error setting the window's look-and-feel.", caughtEx);            
+            }
         }
     }
 
@@ -164,9 +181,11 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             defaultItem.addActionListener(listenerOpen);
             popup.add(defaultItem);
 
-            // Create a listener for syncing the application
+            // Create a listener for showing the application and syncing
             ActionListener listenerSync = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    // Select the first tab
+                    jTabbedPane_Main.setSelectedIndex(TabIds.SYNC.ordinal());
                     setVisible(true);
                     setExtendedState(NORMAL);
                     jButton_SynchronizeActionPerformed(null);
@@ -186,7 +205,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             exitItem.addActionListener(listenerExit);
             popup.add(exitItem);
 
-
             // Construct a TrayIcon
             trayIcon = new TrayIcon(image, "Lotus Notes Google Sync", popup);
             trayIcon.setImageAutoSize(true);
@@ -200,6 +218,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             catch (AWTException e) {
                 System.err.println(e);
             }     
+        } else {
+            // The system tray is not available so just make the GUI visible and minimized
+            setVisible(true);
+            formWindowIconified(null);
         }
     }
 
@@ -208,16 +230,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
      * Runs the synchronization in silent mode using existing configuration settings.
      */
     public void runCommandLine(){
-        try {
-            // Make sure the GUI is hidden
-            this.setVisible(false);
-            isSilentMode = true;
-            doSync();
-        } catch (Exception ex) {
-            exitCode = ExitCodes.EXCEPTION;
-            System.out.println("\nGeneral problem: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+        // Make sure the GUI is hidden
+        this.setVisible(false);
+        isSilentMode = true;
+        doSync();
     }
 
 
@@ -229,6 +245,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         DateFormat dfShort = DateFormat.getDateInstance(DateFormat.SHORT);
         DateFormat tfDefault = DateFormat.getTimeInstance();
         
+        Exception caughtEx = null;
         try {
             if (!jButton_Synchronize.isEnabled()) {
                 // The Sync button is disabled. This probably means some config settings
@@ -240,6 +257,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             proxy.deactivateNow();
 
+            statusBarSet("Performing sync...");
             statusClear();
             setDateRange();
 
@@ -261,7 +279,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             statusAppendLineDiag("Local Date Format: " + ((SimpleDateFormat)dfShort).toLocalizedPattern());
             statusAppendLineDiag("Server Date Format: " + jTextField_LotusNotesServerDateFormat.getText());
             statusAppendLineDiag("Use Proxy: " + jCheckBox_enableProxy.isSelected());
-            statusAppendLineDiag("Use SSL: " + jCheckBox_GoogleSSL.isSelected());
+            statusAppendLineDiag("Use Proxy Username: " + (!jTextField_proxyUsername.getText().isEmpty()));
+            statusAppendLineDiag("Sync On Startup: " + jCheckBox_SyncOnStart.isSelected());
             statusAppendLineDiag("Sync All Subjects To Value: " + jCheckBox_SyncAllSubjectsToValue.isSelected());
             statusAppendLineDiag("Sync Location and Room: " + jCheckBox_SyncLocationAndRoom.isSelected());
             statusAppendLineDiag("Sync Description: " + jCheckBox_SyncDescription.isSelected());
@@ -329,11 +348,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 //statusAppendLineDiag("DEBUG Proxy manually set info  host: " + proxy.getProxyHost() + "   port: " + proxy.getProxyPort() + "   user: " + proxy.getProxyUser() + "   pwd: " + proxy.getProxyPassword());
             }
 
-            // Check whether the user has deselected to use SSL when connecting to google (this is not recommended)
-//            boolean GoogleConnectUsingSSL = jCheckBox_GoogleSSL.isSelected();
             googleMgr.setStatusMessageCallback(this);
             googleMgr.setUsername(jTextField_GoogleUsername.getText());
-            googleMgr.setPassword(new String(jPasswordField_GooglePassword.getPassword()));
             googleMgr.setCalendarName(jTextField_DestinationCalendarName.getText());
 //            googleMgr.setUseSSL(GoogleConnectUsingSSL);
             googleMgr.setDiagnosticMode(jCheckBox_DiagnosticMode.isSelected());
@@ -376,14 +392,24 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 statusAppendFinished();
                 statusAppendLine(createdCount + " Google entries created");
             }
-
-        } catch (Exception ex) {
-            statusAppendException("There was an error synchronizing.\nSee Troubleshooting in the Help file.\nThis screen output is also in " + logFilename + ".", ex);
-            if (!isShowing()) {
-                trayIcon.displayMessage("LNGS", "Sync failed. Open the application or " + logFilename + " for more information.", TrayIcon.MessageType.ERROR);   
-            }
+        } catch (IOException ex) {
+            caughtEx = ex;
+        } catch (InterruptedException ex) {
+            caughtEx = ex;
+        } catch (LngsException ex) {
+            caughtEx = ex;
         }
         finally {
+            if (caughtEx != null) {
+                statusAppendException("There was an error synchronizing.\nSee Troubleshooting in the Help file.\nThis screen output is also in " + logFilename + ".", caughtEx);
+                statusBarSetWarning("Sync failed");
+                if (!isShowing()) {
+                    trayIcon.displayMessage("LNGS", "Sync failed. Open the application or " + logFilename + " for more information.", TrayIcon.MessageType.ERROR);   
+                }
+            } else {
+                statusBarSet("Sync success");
+            }
+
             long elapsedMillis = System.currentTimeMillis() - startTime;
             BigDecimal elapsedSecs = new BigDecimal(elapsedMillis / 1000.0).setScale(1, BigDecimal.ROUND_HALF_UP);
             statusAppendLine("Finished sync (" + elapsedSecs + " s total) - " + dfShort.format(new Date()) + " " + tfDefault.format(new Date()));
@@ -394,7 +420,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                     BufferedWriter fileOut = new BufferedWriter(new FileWriter(logFullPath));
                     jTextArea_Status.write(fileOut);
                     fileOut.close();
-                } catch (Exception ex) {
+                } catch (IOException ex) {
                     statusAppendException("There was an error saving to " + logFullPath + ".", ex);
                 }
             }
@@ -413,9 +439,42 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         
         try {
             saveSettings();
-        }
-        catch (Exception ex) {
+        } catch (IOException ex) {
             statusAppendException("There was an error saving settings.", ex);
+        }
+    }
+
+    protected void promptForPasswords() {
+        // Make sure the Connection Settings tab is the active tab
+        jTabbedPane_Main.setSelectedIndex(TabIds.CONNECTION_SETTINGS.ordinal());
+        
+        // If the "don't save" checkbox is unchecked, just clear the status message
+        if (!jCheckBox_dontSaveSensitiveData.isSelected()) {
+            statusBarSet("");
+            return;
+        }
+
+        String passwordMsg = "";
+        if (jPasswordField_LotusNotesPassword.getPassword().length == 0) {
+            // A Lotus Notes password is needed. Build the appropriate user message.
+            passwordMsg = "Enter a Lotus Notes password.";
+            jPasswordField_LotusNotesPassword.requestFocus();
+        }
+        
+        if (jCheckBox_enableProxy.isSelected()) {
+            if ( ! jTextField_proxyUsername.getText().isEmpty() && jPasswordField_proxyPassword.getPassword().length == 0) {
+                // A proxy password is used. Build the appropriate user message.
+                if (passwordMsg.isEmpty()) {
+                    passwordMsg = "Enter a Proxy password.";
+                    jTextField_proxyUsername.requestFocus();
+                } else {
+                    passwordMsg = "Enter a Lotus Notes and Proxy password.";
+                }
+            }
+        }
+        
+        if ( ! passwordMsg.isEmpty() ) {
+            statusBarSetWarning(passwordMsg);
         }
     }
 
@@ -430,8 +489,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 doSync();
-            } catch (Exception ex) {
-                statusAppendException("There was an error synchronizing the calendars.", ex);
             }
             finally {
                 setSyncScheduleDelay();
@@ -503,7 +560,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         syncTimer.start();
 
         DateFormat dfShort = DateFormat.getTimeInstance(DateFormat.SHORT);
-        jLabel_NextSyncTime.setText("Next Sync: " + dfShort.format(cal.getTime()));
+        jLabel_NextSyncTime.setText("Next Scheduled Sync: " + dfShort.format(cal.getTime()));
     }
 
 
@@ -512,9 +569,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private void initComponents() {
 
         jButton_Cancel = new javax.swing.JButton();
-        jTabbedPane1 = new javax.swing.JTabbedPane();
+        jTabbedPane_Main = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
-        jLabel10 = new javax.swing.JLabel();
         jButton_Synchronize = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea_Status = new javax.swing.JTextArea();
@@ -541,9 +597,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jCheckBox_SyncLocationAndRoom = new javax.swing.JCheckBox();
         jTextField_SyncAllSubjectsToThisValue = new javax.swing.JTextField();
         jPanel1 = new javax.swing.JPanel();
-        jCheckBox_GoogleSSL = new javax.swing.JCheckBox();
-        jPasswordField_GooglePassword = new javax.swing.JPasswordField();
-        jLabel4 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jTextField_GoogleUsername = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
@@ -569,7 +622,9 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jButton_DetectProxySettings = new javax.swing.JButton();
         jLabel25 = new javax.swing.JLabel();
         jTextField_LotusNotesServerDateFormat = new javax.swing.JTextField();
-        jLabel16 = new javax.swing.JLabel();
+        jCheckBox_dontSaveSensitiveData = new javax.swing.JCheckBox();
+        jLabel12 = new javax.swing.JLabel();
+        jLabel_statusMessage = new javax.swing.JLabel();
         jButton_Help = new javax.swing.JButton();
         jButton_Minimize = new javax.swing.JButton();
 
@@ -596,13 +651,11 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             }
         });
 
-        jTabbedPane1.addChangeListener(new javax.swing.event.ChangeListener() {
+        jTabbedPane_Main.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                jTabbedPane1StateChanged(evt);
+                jTabbedPane_MainStateChanged(evt);
             }
         });
-
-        jLabel10.setText("Define Settings then click Synchronize.");
 
         jButton_Synchronize.setMnemonic('y');
         jButton_Synchronize.setText("Synchronize");
@@ -618,7 +671,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jTextArea_Status.setText("Status messages display here.\n");
         jScrollPane1.setViewportView(jTextArea_Status);
 
-        jLabel_NextSyncTime.setText("Next Sync: 12:00 PM");
+        jLabel_NextSyncTime.setText("Next Scheduled Sync: 12:00 PM");
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -627,11 +680,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             .add(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 496, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
-                        .add(jLabel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 263, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jLabel_NextSyncTime, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(jScrollPane1)
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .add(230, 230, 230)
+                        .add(jLabel_NextSyncTime, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 157, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .add(18, 18, 18)
                         .add(jButton_Synchronize)))
                 .addContainerGap())
@@ -642,14 +694,13 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jButton_Synchronize)
-                    .add(jLabel10, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jLabel_NextSyncTime, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(jLabel_NextSyncTime))
                 .add(18, 18, 18)
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 408, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
-        jTabbedPane1.addTab("Perform Sync", jPanel2);
+        jTabbedPane_Main.addTab("Perform Sync", jPanel2);
 
         jLabel11.setForeground(new java.awt.Color(51, 51, 255));
         jLabel11.setText("General Settings");
@@ -660,6 +711,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jCheckBox_SyncOnStart.setPreferredSize(new java.awt.Dimension(100, 23));
 
         jCheckBox_DiagnosticMode.setText("Diagnostic Mode");
+        jCheckBox_DiagnosticMode.setToolTipText("When checked, additional info is shown during a sync and some .txt output files are created.");
         jCheckBox_DiagnosticMode.setMaximumSize(new java.awt.Dimension(100, 23));
         jCheckBox_DiagnosticMode.setMinimumSize(new java.awt.Dimension(40, 23));
         jCheckBox_DiagnosticMode.setPreferredSize(new java.awt.Dimension(100, 23));
@@ -676,6 +728,11 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jCheckBox_SyncAlarms.setMaximumSize(new java.awt.Dimension(100, 23));
         jCheckBox_SyncAlarms.setMinimumSize(new java.awt.Dimension(40, 23));
         jCheckBox_SyncAlarms.setPreferredSize(new java.awt.Dimension(100, 23));
+        jCheckBox_SyncAlarms.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBox_SyncAlarmsActionPerformed(evt);
+            }
+        });
 
         jLabel20.setText("Destination Calendar Name");
 
@@ -717,7 +774,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jLabel24.setForeground(new java.awt.Color(51, 51, 255));
         jLabel24.setText("Sync Schedule");
 
-        jTextField_SyncMinOffsets.setToolTipText("The calendar name is case sensitive, i.e. \"my cal\" is different then \"My Cal\".");
+        jTextField_SyncMinOffsets.setToolTipText("For example, an offset of 15 means syncs happen every hour at 1:15, 2:15, 3:15, etc.");
         jTextField_SyncMinOffsets.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField_SyncMinOffsetsFocusLost(evt);
@@ -750,7 +807,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jCheckBox_SyncLocationAndRoom.setMinimumSize(new java.awt.Dimension(40, 23));
         jCheckBox_SyncLocationAndRoom.setPreferredSize(new java.awt.Dimension(100, 23));
 
-        jTextField_SyncAllSubjectsToThisValue.setToolTipText("The calendar name is case sensitive, i.e. \"my cal\" is different then \"My Cal\".");
+        jTextField_SyncAllSubjectsToThisValue.setToolTipText("");
         jTextField_SyncAllSubjectsToThisValue.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField_SyncAllSubjectsToThisValueFocusLost(evt);
@@ -766,51 +823,45 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel3Layout.createSequentialGroup()
                         .add(10, 10, 10)
-                        .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                        .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                            .add(jCheckBox_SyncDescription, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 140, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jCheckBox_SyncLocationAndRoom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 199, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jCheckBox_SyncMeetingAttendees, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(jPanel3Layout.createSequentialGroup()
-                                .add(jCheckBox_DiagnosticMode, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .add(352, 352, 352))
-                            .add(jPanel3Layout.createSequentialGroup()
-                                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(jCheckBox_SyncDescription, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 140, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(jCheckBox_SyncAlarms, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 253, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(jCheckBox_SyncOnStart, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 179, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(jCheckBox_SyncLocationAndRoom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 199, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(jCheckBox_SyncMeetingAttendees, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .add(jLabel20, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jTextField_DestinationCalendarName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 330, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addContainerGap())
-                            .add(jPanel3Layout.createSequentialGroup()
-                                .add(jCheckBox_SyncAllSubjectsToValue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 235, Short.MAX_VALUE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jTextField_SyncAllSubjectsToThisValue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 249, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addContainerGap())
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .add(jCheckBox_SyncAtMinOffsets, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jTextField_SyncMinOffsets, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 298, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addContainerGap())))
-                    .add(jPanel3Layout.createSequentialGroup()
-                        .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                .add(jLabel20)
+                                .add(26, 26, 26)
+                                .add(jTextField_DestinationCalendarName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 330, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(jPanel3Layout.createSequentialGroup()
                                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jLabel17, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel3Layout.createSequentialGroup()
-                                        .add(18, 18, 18)
-                                        .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                                            .add(jLabel22, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
-                                            .add(jLabel23))))
+                                    .add(jCheckBox_SyncAtMinOffsets, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .add(jCheckBox_SyncOnStart, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE))
+                                .add(9, 9, 9)
+                                .add(jTextField_SyncMinOffsets, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 298, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                            .add(jPanel3Layout.createSequentialGroup()
+                                .add(jCheckBox_SyncAllSubjectsToValue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 253, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jTextField_SyncAllSubjectsToThisValue))
+                            .add(jCheckBox_DiagnosticMode, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(jCheckBox_SyncAlarms, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 253, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap(20, Short.MAX_VALUE))
+                    .add(jPanel3Layout.createSequentialGroup()
+                        .add(jLabel17, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(jPanel3Layout.createSequentialGroup()
+                        .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jLabel24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 120, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jLabel21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 120, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jLabel11, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 105, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jPanel3Layout.createSequentialGroup()
+                                .add(10, 10, 10)
+                                .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                    .add(jLabel22, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
+                                    .add(jLabel23))
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                                     .add(jTextField_SyncDaysInFuture, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 39, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(jTextField_SyncDaysInPast, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 39, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                            .add(jLabel24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 120, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(jLabel21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 120, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(jLabel11, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 105, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                        .addContainerGap(347, Short.MAX_VALUE))))
+                                    .add(jTextField_SyncDaysInPast, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 39, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                        .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -820,17 +871,17 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jTextField_DestinationCalendarName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel20, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .add(3, 3, 3)
-                .add(jCheckBox_DiagnosticMode, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 34, Short.MAX_VALUE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                    .add(jLabel20))
+                .add(5, 5, 5)
+                .add(jCheckBox_DiagnosticMode, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(18, 18, 18)
                 .add(jLabel24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jCheckBox_SyncOnStart, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jTextField_SyncMinOffsets)
-                    .add(jCheckBox_SyncAtMinOffsets, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(jCheckBox_SyncAtMinOffsets, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .add(9, 9, 9)
                 .add(jLabel21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(4, 4, 4)
@@ -844,34 +895,30 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jLabel17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jCheckBox_SyncLocationAndRoom, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 35, Short.MAX_VALUE)
+                .add(jCheckBox_SyncLocationAndRoom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jCheckBox_SyncDescription, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jCheckBox_SyncMeetingAttendees, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jCheckBox_SyncAlarms, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(1, 1, 1)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel3Layout.createSequentialGroup()
                         .add(3, 3, 3)
-                        .add(jTextField_SyncAllSubjectsToThisValue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 21, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .add(jTextField_SyncAllSubjectsToThisValue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(jCheckBox_SyncAllSubjectsToValue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(64, 64, 64))
+                .add(78, 78, 78))
         );
 
-        jTabbedPane1.addTab("Sync Settings", jPanel3);
+        jTabbedPane_Main.addTab("Sync Settings", jPanel3);
 
         jPanel1.setAutoscrolls(true);
 
-        jCheckBox_GoogleSSL.setSelected(true);
-        jCheckBox_GoogleSSL.setText("Connect to Google Using SSL/TLS (recommended)");
-
-        jLabel4.setText("Password");
-
-        jLabel3.setText("ID/Email Address");
+        jLabel3.setText("Email Address");
 
         jTextField_GoogleUsername.setText("user@google.com");
+        jTextField_GoogleUsername.setPreferredSize(new java.awt.Dimension(6, 20));
 
         jLabel5.setForeground(new java.awt.Color(51, 51, 255));
         jLabel5.setText("Google Settings");
@@ -888,12 +935,12 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jLabel6.setText("Lotus Notes Settings");
 
         jLabel9.setForeground(new java.awt.Color(51, 51, 255));
-        jLabel9.setText("Network Settings");
+        jLabel9.setText("Security Settings");
 
         jCheckBox_enableProxy.setText("Use Proxy Server to Reach the Internet");
-        jCheckBox_enableProxy.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                jCheckBox_enableProxyStateChanged(evt);
+        jCheckBox_enableProxy.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jCheckBox_enableProxyItemStateChanged(evt);
             }
         });
 
@@ -947,11 +994,17 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
         jTextField_LotusNotesServerDateFormat.setText("Detect");
         jTextField_LotusNotesServerDateFormat.setToolTipText("Generally you should leave this as \"Detect\". See Help for more information.");
-        jTextField_LotusNotesServerDateFormat.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                jTextField_LotusNotesServerDateFormatFocusLost(evt);
+
+        jCheckBox_dontSaveSensitiveData.setText("For Security, Don't Save Passwords on Exit");
+        jCheckBox_dontSaveSensitiveData.setToolTipText("When checked, the Lotus Notes and Proxy passwords will not be saved to the config file and the user will have to enter the passwords each time LNGS is started.");
+        jCheckBox_dontSaveSensitiveData.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jCheckBox_dontSaveSensitiveDataItemStateChanged(evt);
             }
         });
+
+        jLabel12.setForeground(new java.awt.Color(51, 51, 255));
+        jLabel12.setText("Network Settings");
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -966,54 +1019,13 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jPanel1Layout.createSequentialGroup()
-                                .add(jLabel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 236, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .add(0, 0, Short.MAX_VALUE))
-                            .add(jPanel1Layout.createSequentialGroup()
                                 .add(jLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 178, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(172, 172, 172)
                                 .add(jButton_DetectLotusSettings))
+                            .add(jLabel12, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 236, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(jPanel1Layout.createSequentialGroup()
                                 .add(10, 10, 10)
                                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(jPanel1Layout.createSequentialGroup()
-                                        .add(jCheckBox_enableProxy)
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .add(jButton_DetectProxySettings))
-                                    .add(jPanel1Layout.createSequentialGroup()
-                                        .add(21, 21, 21)
-                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                            .add(jPanel1Layout.createSequentialGroup()
-                                                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                                    .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                                    .add(jLabel18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 126, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                                    .add(jLabel19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                            .add(jPanel1Layout.createSequentialGroup()
-                                                .add(jLabel8, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .add(37, 37, 37)))
-                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                            .add(jPanel1Layout.createSequentialGroup()
-                                                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                                    .add(jPasswordField_proxyPassword)
-                                                    .add(jPanel1Layout.createSequentialGroup()
-                                                        .add(jTextField_proxyPort, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 63, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                                        .add(0, 0, Short.MAX_VALUE))
-                                                    .add(jTextField_proxyUsername))
-                                                .add(171, 171, 171))
-                                            .add(jPanel1Layout.createSequentialGroup()
-                                                .add(jTextField_proxyIP, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                                .add(152, 152, 152))))
-                                    .add(jPanel1Layout.createSequentialGroup()
-                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                            .add(jLabel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .add(jLabel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                                            .add(jPasswordField_GooglePassword)
-                                            .add(jTextField_GoogleUsername, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)))
-                                    .add(jPanel1Layout.createSequentialGroup()
-                                        .add(jCheckBox_GoogleSSL, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 453, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                        .add(0, 0, Short.MAX_VALUE))
                                     .add(jPanel1Layout.createSequentialGroup()
                                         .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                                             .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 69, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -1022,17 +1034,56 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                                             .add(jLabel13, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 62, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                         .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                            .add(jPasswordField_LotusNotesPassword)
                                             .add(jPanel1Layout.createSequentialGroup()
                                                 .add(jTextField_LotusNotesServer, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 251, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                                 .add(jCheckBox_LotusNotesServerIsLocal, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
                                             .add(jPanel1Layout.createSequentialGroup()
+                                                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPasswordField_LotusNotesPassword)
+                                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jTextField_LotusNotesMailFile, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 351, Short.MAX_VALUE)
+                                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jTextField_LotusNotesServerDateFormat, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 102, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                                .add(0, 0, Short.MAX_VALUE))))
+                                    .add(jPanel1Layout.createSequentialGroup()
+                                        .add(21, 21, 21)
+                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                            .add(jPanel1Layout.createSequentialGroup()
                                                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                                    .add(jTextField_LotusNotesMailFile, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 351, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                                    .add(jTextField_LotusNotesServerDateFormat, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 102, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                                .add(0, 0, Short.MAX_VALUE)))))))
-                        .add(31, 31, 31))))
+                                                    .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                                    .add(jLabel18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 126, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                                    .add(jLabel19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                    .add(jPanel1Layout.createSequentialGroup()
+                                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                            .add(jTextField_proxyUsername, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                                            .add(jPasswordField_proxyPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                                                    .add(jPanel1Layout.createSequentialGroup()
+                                                        .add(4, 4, 4)
+                                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                            .add(jTextField_proxyIP, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                                            .add(jTextField_proxyPort, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 63, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                                                .add(0, 0, Short.MAX_VALUE))
+                                            .add(jLabel8, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                                    .add(jPanel1Layout.createSequentialGroup()
+                                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                            .add(jPanel1Layout.createSequentialGroup()
+                                                .add(jLabel3)
+                                                .add(58, 58, 58)
+                                                .add(jTextField_GoogleUsername, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 351, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                            .add(jPanel1Layout.createSequentialGroup()
+                                                .add(jCheckBox_enableProxy)
+                                                .add(121, 121, 121)
+                                                .add(jButton_DetectProxySettings)))
+                                        .add(0, 0, Short.MAX_VALUE)))))
+                        .add(31, 31, 31))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jLabel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 236, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jPanel1Layout.createSequentialGroup()
+                                .add(10, 10, 10)
+                                .add(jCheckBox_dontSaveSensitiveData)))
+                        .add(0, 0, Short.MAX_VALUE))))
         );
 
         jPanel1Layout.linkSize(new java.awt.Component[] {jLabel13, jLabel14, jLabel15}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
@@ -1065,24 +1116,18 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(1, 1, 1)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jTextField_GoogleUsername))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jPasswordField_GooglePassword))
-                .add(33, 33, 33)
-                .add(jLabel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(jCheckBox_GoogleSSL)
+                    .add(jLabel3)
+                    .add(jTextField_GoogleUsername, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(18, 18, 18)
+                .add(jLabel12, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jCheckBox_enableProxy)
-                    .add(jButton_DetectProxySettings))
+                    .add(jButton_DetectProxySettings)
+                    .add(jCheckBox_enableProxy))
                 .add(1, 1, 1)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jTextField_proxyIP))
+                    .add(jTextField_proxyIP, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel8, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -1095,13 +1140,20 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jPasswordField_proxyPassword))
-                .add(33, 33, 33))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jLabel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jCheckBox_dontSaveSensitiveData)
+                .add(44, 44, 44))
         );
 
-        jTabbedPane1.addTab("Connection Settings", jPanel1);
+        jTabbedPane_Main.addTab("Connection Settings", jPanel1);
 
-        jLabel16.setForeground(new java.awt.Color(51, 51, 255));
-        jLabel16.setText("This tool synchronizes a Lotus Notes calendar to a Google calendar.");
+        jLabel_statusMessage.setBackground(new java.awt.Color(255, 148, 20));
+        jLabel_statusMessage.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel_statusMessage.setText("This tool synchronizes a Lotus Notes calendar to a Google calendar.");
+        jLabel_statusMessage.setMaximumSize(new java.awt.Dimension(324, 16));
+        jLabel_statusMessage.setMinimumSize(new java.awt.Dimension(324, 16));
 
         jButton_Help.setMnemonic('H');
         jButton_Help.setText("Help");
@@ -1129,22 +1181,22 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
                     .add(layout.createSequentialGroup()
                         .add(10, 10, 10)
                         .add(jButton_Cancel)
-                        .add(177, 177, 177)
+                        .add(171, 171, 171)
                         .add(jButton_Minimize)
-                        .add(159, 159, 159)
+                        .add(165, 165, 165)
                         .add(jButton_Help)
                         .add(0, 0, Short.MAX_VALUE))
-                    .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .add(jLabel16, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(jTabbedPane_Main, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .add(jLabel_statusMessage, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jLabel16, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .add(jLabel_statusMessage, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 16, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(15, 15, 15)
-                .add(jTabbedPane1)
+                .add(jTabbedPane_Main)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jButton_Cancel)
@@ -1180,8 +1232,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         try {
             if (saveSettingsOnExit)
                 saveSettings();
-        }
-        catch (Exception ex) {
+        } catch (IOException ex) {
             statusAppendException("There was an error saving settings.", ex);
             // The next time the user clicks Exit, we will exit without saving.
             saveSettingsOnExit = false;
@@ -1191,26 +1242,25 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         System.exit(ExitCodes.SUCCESS.ordinal());
     }//GEN-LAST:event_formWindowClosed
 
-    private void jCheckBox_enableProxyStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jCheckBox_enableProxyStateChanged
-        jTextField_proxyIP.setEnabled(jCheckBox_enableProxy.isSelected());
-        jTextField_proxyPort.setEnabled(jCheckBox_enableProxy.isSelected());
-        jTextField_proxyUsername.setEnabled(jCheckBox_enableProxy.isSelected());
-        jPasswordField_proxyPassword.setEnabled(jCheckBox_enableProxy.isSelected());
-        validateSettings();
-    }//GEN-LAST:event_jCheckBox_enableProxyStateChanged
-
     private void jTextField_DestinationCalendarNameFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField_DestinationCalendarNameFocusLost
         // Trim whitespace from front and back of text
         jTextField_DestinationCalendarName.setText(jTextField_DestinationCalendarName.getText().trim());
     }//GEN-LAST:event_jTextField_DestinationCalendarNameFocusLost
 
     private void jButton_HelpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_HelpActionPerformed
+        Exception caughtEx = null;
         try {
             // Get the absolute path to this app and append the help filename
 
             java.awt.Desktop.getDesktop().browse(new java.net.URI(helpFilename));
-        } catch (Exception ex) {
-            statusAppendException("There was a problem opening the help file.", ex);
+        } catch (URISyntaxException ex) {
+            caughtEx = ex;
+        } catch (IOException ex) {
+            caughtEx = ex;
+        } finally {
+            if (caughtEx != null) {
+                statusAppendException("There was a problem opening the help file.", caughtEx);
+            }
         }
     }//GEN-LAST:event_jButton_HelpActionPerformed
 
@@ -1248,8 +1298,11 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     }//GEN-LAST:event_jCheckBox_LotusNotesServerIsLocalItemStateChanged
 
     private void formWindowIconified(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowIconified
-        // Hide the window in addition to minimizing it
-        setVisible(false);
+        if (SystemTray.isSupported()) {
+            // Hide the window in addition to minimizing it
+            setVisible(false);
+        }
+        setExtendedState(ICONIFIED);
     }//GEN-LAST:event_formWindowIconified
 
     private void jButton_MinimizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_MinimizeActionPerformed
@@ -1257,6 +1310,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     }//GEN-LAST:event_jButton_MinimizeActionPerformed
 
     private void jButton_DetectLotusSettingsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_DetectLotusSettingsActionPerformed
+        Exception caughtEx = null;
         try {
             LotusNotesManager lotusNotesMgr = new LotusNotesManager();
             //lotusNotesMgr.setStatusMessageCallback(this);
@@ -1290,23 +1344,28 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             }
             
             statusClear();
-        } catch (Exception ex) {
-            statusClear();
-            String msg = "There was an problem detecting Lotus Notes settings.";
-            statusAppendException(msg, ex);
-            javax.swing.JOptionPane.showMessageDialog(this, msg + " Switch to the main tab to see the error details.", "Detect Settings Error", JOptionPane.ERROR_MESSAGE);
-        }                
+        } catch (NotesException ex) {
+            caughtEx = ex;
+        } catch (LngsException ex) {
+            caughtEx = ex;
+        } finally {
+            if (caughtEx != null) {
+                statusClear();
+                String msg = "There was a problem detecting Lotus Notes settings.";
+                statusAppendException(msg, caughtEx);
+                javax.swing.JOptionPane.showMessageDialog(this, msg + " Switch to the main tab to see the error details.", "Detect Settings Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }//GEN-LAST:event_jButton_DetectLotusSettingsActionPerformed
 
-    private void jTabbedPane1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPane1StateChanged
+    private void jTabbedPane_MainStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPane_MainStateChanged
         // Save settings because we changed tabs
         try {
             saveSettings();
-        }
-        catch (Exception ex) {
+        } catch (IOException ex) {
             statusAppendException("There was an error saving settings.", ex);
         }        
-    }//GEN-LAST:event_jTabbedPane1StateChanged
+    }//GEN-LAST:event_jTabbedPane_MainStateChanged
 
     private void jButton_DetectProxySettingsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_DetectProxySettingsActionPerformed
 	System.setProperty("java.net.useSystemProxies", "true");
@@ -1315,8 +1374,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 	try {
 	    proxyList = ProxySelector.getDefault().select(new URI("http://www.gmail.com"));
 	} 
-	catch (URISyntaxException e) {
-            showException(e);
+	catch (URISyntaxException ex) {
+            showException(ex);
 	}
         
 	if (proxyList != null) {
@@ -1341,9 +1400,21 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         }        
     }//GEN-LAST:event_jButton_DetectProxySettingsActionPerformed
 
-    private void jTextField_LotusNotesServerDateFormatFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField_LotusNotesServerDateFormatFocusLost
+    private void jCheckBox_dontSaveSensitiveDataItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBox_dontSaveSensitiveDataItemStateChanged
+        promptForPasswords();
+    }//GEN-LAST:event_jCheckBox_dontSaveSensitiveDataItemStateChanged
+
+    private void jCheckBox_enableProxyItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBox_enableProxyItemStateChanged
+        jTextField_proxyIP.setEnabled(jCheckBox_enableProxy.isSelected());
+        jTextField_proxyPort.setEnabled(jCheckBox_enableProxy.isSelected());
+        jTextField_proxyUsername.setEnabled(jCheckBox_enableProxy.isSelected());
+        jPasswordField_proxyPassword.setEnabled(jCheckBox_enableProxy.isSelected());
+        validateSettings();        
+    }//GEN-LAST:event_jCheckBox_enableProxyItemStateChanged
+
+    private void jCheckBox_SyncAlarmsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox_SyncAlarmsActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField_LotusNotesServerDateFormatFocusLost
+    }//GEN-LAST:event_jCheckBox_SyncAlarmsActionPerformed
 
 
     // Validate our configuration settings
@@ -1366,7 +1437,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             statusClear();
             statusAppendLine("Configuration settings were successfully validated.");
-        } catch (Exception ex) {
+        } catch (LngsException ex) {
             statusClear();
             statusAppendLine("ERROR: A configuration setting is invalid. Syncing is disabled until the problem is resolved.");
             statusAppendLine(ex.getMessage());
@@ -1408,6 +1479,10 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
     @SuppressWarnings("static-access")
     private void saveSettings() throws IOException {
+        if (config == null) {
+            return;
+        }
+        
         config.setLotusNotesServer(jTextField_LotusNotesServer.getText());
         config.setLotusNotesServerDateFormat(jTextField_LotusNotesServerDateFormat.getText());
         config.setLotusNotesServerIsLocal(jCheckBox_LotusNotesServerIsLocal.isSelected());
@@ -1415,7 +1490,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         config.setLotusNotesPassword(new String(jPasswordField_LotusNotesPassword.getPassword()));
 
         config.setGoogleUserName(jTextField_GoogleUsername.getText());
-        config.setGooglePassword(new String(jPasswordField_GooglePassword.getPassword()));
 
         config.setGoogleEnableProxy(jCheckBox_enableProxy.isSelected());
         config.setGoogleProxyPort(jTextField_proxyPort.getText());
@@ -1424,7 +1498,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         config.setGoogleProxyPassword(new String(jPasswordField_proxyPassword.getPassword()));
         config.setGoogleCalendarName(jTextField_DestinationCalendarName.getText());
 
-        config.setGoogleUseSSL(jCheckBox_GoogleSSL.isSelected());
         config.setSyncOnStartup(jCheckBox_SyncOnStart.isSelected());
         config.setSyncAtMinOffsets(jCheckBox_SyncAtMinOffsets.isSelected());
         config.setSyncMinOffsets(jTextField_SyncMinOffsets.getText());
@@ -1437,63 +1510,72 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         config.setSyncDaysInFuture(Integer.parseInt(jTextField_SyncDaysInFuture.getText()));
         config.setSyncDaysInPast(Integer.parseInt(jTextField_SyncDaysInPast.getText()));
         config.setSyncMeetingAttendees(jCheckBox_SyncMeetingAttendees.isSelected());
+        
+        config.setDontSaveSensitiveData(jCheckBox_dontSaveSensitiveData.isSelected());        
 
         //save configuration to file
         config.writeConfig();
     }
 
     private void loadSettings() {
-        try {
-            jTextField_LotusNotesServer.setText(config.getLotusNotesServer());
-            jTextField_LotusNotesServerDateFormat.setText(config.getLotusNotesServerDateFormat());
-            jCheckBox_LotusNotesServerIsLocal.setSelected(config.getLotusNotesServerIsLocal());
-            // Call the state changed event because it doesn't always get fired by the above setSelected() call
-            jCheckBox_LotusNotesServerIsLocalItemStateChanged(null);
-            jTextField_LotusNotesMailFile.setText(config.getLotusNotesMailFile());
-            String s = config.getLotusNotesPassword();
-            jPasswordField_LotusNotesPassword.setText(config.getLotusNotesPassword());
+        jTextField_LotusNotesServer.setText(config.getLotusNotesServer());
+        jTextField_LotusNotesServerDateFormat.setText(config.getLotusNotesServerDateFormat());
+        jCheckBox_LotusNotesServerIsLocal.setSelected(config.getLotusNotesServerIsLocal());
+        // Call the state changed event because it doesn't always get fired by the above setSelected() call
+        jCheckBox_LotusNotesServerIsLocalItemStateChanged(null);
+        jTextField_LotusNotesMailFile.setText(config.getLotusNotesMailFile());
+        String s = config.getLotusNotesPassword();
+        jPasswordField_LotusNotesPassword.setText(config.getLotusNotesPassword());
 
-            jTextField_GoogleUsername.setText(config.getGoogleUserName());
-            jPasswordField_GooglePassword.setText(config.getGooglePassword());
-            jCheckBox_GoogleSSL.setSelected(config.getGoogleUseSSL());
-            jCheckBox_enableProxy.setSelected(config.getGoogleEnableProxy());
-            jTextField_proxyIP.setText(config.getGoogleProxyIP());
-            jTextField_proxyPort.setText(config.getGoogleProxyPort());
-            jTextField_proxyUsername.setText(config.getGoogleProxyUsername());
-            jPasswordField_proxyPassword.setText(config.getGoogleProxyPassword());
-            jTextField_DestinationCalendarName.setText(config.getGoogleCalendarName());
+        jTextField_GoogleUsername.setText(config.getGoogleUserName());
+        jCheckBox_enableProxy.setSelected(config.getGoogleEnableProxy());
+        jTextField_proxyIP.setText(config.getGoogleProxyIP());
+        jTextField_proxyPort.setText(config.getGoogleProxyPort());
+        jTextField_proxyUsername.setText(config.getGoogleProxyUsername());
+        jPasswordField_proxyPassword.setText(config.getGoogleProxyPassword());
+        jTextField_DestinationCalendarName.setText(config.getGoogleCalendarName());
 
-            jCheckBox_SyncOnStart.setSelected(config.getSyncOnStartup());
-            jTextField_SyncMinOffsets.setText(config.getSyncMinOffsets());
-            jCheckBox_SyncAtMinOffsetsItemStateChanged(null);
-            jCheckBox_SyncAtMinOffsets.setSelected(config.getSyncAtMinOffsets());
-            jCheckBox_SyncAllSubjectsToValue.setSelected(config.getSyncAllSubjectsToValue());
-            jCheckBox_SyncAllSubjectsToValueItemStateChanged(null);
-            jTextField_SyncAllSubjectsToThisValue.setText(config.getSyncAllSubjectsToThisValue());
-            jCheckBox_DiagnosticMode.setSelected(config.getDiagnosticMode());
-            jCheckBox_SyncDescription.setSelected(config.getSyncDescription());
-            jCheckBox_SyncLocationAndRoom.setSelected(config.getSyncLocationAndRoom());
-            jCheckBox_SyncAlarms.setSelected(config.getSyncAlarms());
-            jTextField_SyncDaysInFuture.setText(Integer.toString(config.getSyncDaysInFuture()));
-            jTextField_SyncDaysInPast.setText(Integer.toString(config.getSyncDaysInPast()));
-            jCheckBox_SyncMeetingAttendees.setSelected(config.getSyncMeetingAttendees());
+        jCheckBox_SyncOnStart.setSelected(config.getSyncOnStartup());
+        jTextField_SyncMinOffsets.setText(config.getSyncMinOffsets());
+        jCheckBox_SyncAtMinOffsetsItemStateChanged(null);
+        jCheckBox_SyncAtMinOffsets.setSelected(config.getSyncAtMinOffsets());
+        jCheckBox_SyncAllSubjectsToValue.setSelected(config.getSyncAllSubjectsToValue());
+        jCheckBox_SyncAllSubjectsToValueItemStateChanged(null);
+        jTextField_SyncAllSubjectsToThisValue.setText(config.getSyncAllSubjectsToThisValue());
+        jCheckBox_DiagnosticMode.setSelected(config.getDiagnosticMode());
+        jCheckBox_SyncDescription.setSelected(config.getSyncDescription());
+        jCheckBox_SyncLocationAndRoom.setSelected(config.getSyncLocationAndRoom());
+        jCheckBox_SyncAlarms.setSelected(config.getSyncAlarms());
+        jTextField_SyncDaysInFuture.setText(Integer.toString(config.getSyncDaysInFuture()));
+        jTextField_SyncDaysInPast.setText(Integer.toString(config.getSyncDaysInPast()));
+        jCheckBox_SyncMeetingAttendees.setSelected(config.getSyncMeetingAttendees());
 
-            // Configure proxy settings
-            proxy.setProxyHost(config.getGoogleProxyIP());
-            proxy.setProxyPort(config.getGoogleProxyPort());
-            proxy.setEnabled(config.getGoogleEnableProxy());
-        } catch (Exception ex) {
-            statusAppendException("Unable to read settings from the config file.", ex);
-        }
+        jCheckBox_dontSaveSensitiveData.setSelected(config.getDontSaveSensitiveData());
+        
+        // Configure proxy settings
+        proxy.setProxyHost(config.getGoogleProxyIP());
+        proxy.setProxyPort(config.getGoogleProxyPort());
+        proxy.setEnabled(config.getGoogleEnableProxy());
     }
 
 
     protected void setDateRange() {
+        final String NEGATIVE_MSG = "must be a positive number. The negative sign has been removed from the value you entered.";
+        final String NEGATIVE_TITLE = "Value Must Be Positive";
+        
         // Define our min start date for entries we will process
         Calendar now = Calendar.getInstance();
         syncDaysInPast = 0;
         if (!jTextField_SyncDaysInPast.getText().isEmpty())
             syncDaysInPast = Integer.parseInt(jTextField_SyncDaysInPast.getText());
+        if (syncDaysInPast < 0) {
+            syncDaysInPast = Math.abs(syncDaysInPast);
+            jTextField_SyncDaysInPast.setText(Integer.toString(syncDaysInPast));
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Sync Days In Past " + NEGATIVE_MSG,
+                    NEGATIVE_TITLE, javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         now.add(Calendar.DATE, syncDaysInPast * -1);
         // Clear out the time portion
         now.set(Calendar.HOUR_OF_DAY, 0);
@@ -1506,6 +1588,14 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         syncDaysInFuture = 0;
         if (!jTextField_SyncDaysInFuture.getText().isEmpty())
             syncDaysInFuture = Integer.parseInt(jTextField_SyncDaysInFuture.getText());
+        if (syncDaysInFuture < 0) {
+            syncDaysInFuture = Math.abs(syncDaysInFuture);
+            jTextField_SyncDaysInFuture.setText(Integer.toString(syncDaysInFuture));
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Sync Days In Future " + NEGATIVE_MSG,
+                    NEGATIVE_TITLE, javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         now.add(Calendar.DATE, syncDaysInFuture);
         // Set the time portion
         now.set(Calendar.HOUR_OF_DAY, 23);
@@ -1524,6 +1614,31 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         javax.swing.JOptionPane.showMessageDialog(null, "An unexpected error occured. Here is the stack trace:\n\n" + sw.toString(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
     }
     
+    /**
+     * Sets the status bar text.
+     * Note: The status bar is a single line at the top of the GUI
+     * which is different than the large, status text area in the GUI center.
+     * GUI center... surround it with chocolate and you have a yummy treat.
+     */
+    protected void statusBarSet(String text) {
+        if (!isSilentMode) {
+            // Turn off opaque so the default system background is used
+            jLabel_statusMessage.setOpaque(false);
+            jLabel_statusMessage.setText(text);
+        }
+    }
+            
+    /**
+     * Sets the status bar text with a warning background color.
+     */
+    protected void statusBarSetWarning(String text) {
+        if (!isSilentMode) {
+            // Turn on opaque so the warning background color is shown
+            jLabel_statusMessage.setOpaque(true);
+            jLabel_statusMessage.setText(text);
+        }
+    }
+            
     /**
      * Clears the status text area.
      */
@@ -1645,7 +1760,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.5.5";
+    final String appVersion = "2.6";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";
@@ -1657,14 +1772,11 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     int syncDaysInPast = 0;
     int syncDaysInFuture = 0;
 
+    enum TabIds { SYNC, SYNC_SETTINGS, CONNECTION_SETTINGS };
+    
     // An exit code of 0 is success. All other values are failure.
     enum ExitCodes { SUCCESS, INVALID_PARM, EXCEPTION, MISSING_RESOURCE };
     static ExitCodes exitCode = ExitCodes.SUCCESS;
-//    static final int EXIT_SUCCESS = 0;
-//    static final int EXIT_INVALID_PARM = 1;
-//    static final int EXIT_EXCEPTION = 2;
-//    static final int EXIT_MISSING_RESOURCE = 3;
-//    static int exitCode = EXIT_SUCCESS;
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton_Cancel;
@@ -1674,7 +1786,6 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private javax.swing.JButton jButton_Minimize;
     private javax.swing.JButton jButton_Synchronize;
     private javax.swing.JCheckBox jCheckBox_DiagnosticMode;
-    private javax.swing.JCheckBox jCheckBox_GoogleSSL;
     private javax.swing.JCheckBox jCheckBox_LotusNotesServerIsLocal;
     private javax.swing.JCheckBox jCheckBox_SyncAlarms;
     private javax.swing.JCheckBox jCheckBox_SyncAllSubjectsToValue;
@@ -1683,13 +1794,13 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private javax.swing.JCheckBox jCheckBox_SyncLocationAndRoom;
     private javax.swing.JCheckBox jCheckBox_SyncMeetingAttendees;
     private javax.swing.JCheckBox jCheckBox_SyncOnStart;
+    private javax.swing.JCheckBox jCheckBox_dontSaveSensitiveData;
     private javax.swing.JCheckBox jCheckBox_enableProxy;
-    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel19;
@@ -1700,21 +1811,20 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel25;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JLabel jLabel_NextSyncTime;
+    private javax.swing.JLabel jLabel_statusMessage;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPasswordField jPasswordField_GooglePassword;
     private javax.swing.JPasswordField jPasswordField_LotusNotesPassword;
     private javax.swing.JPasswordField jPasswordField_proxyPassword;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JTabbedPane jTabbedPane_Main;
     private javax.swing.JTextArea jTextArea_Status;
     private javax.swing.JTextField jTextField_DestinationCalendarName;
     private javax.swing.JTextField jTextField_GoogleUsername;

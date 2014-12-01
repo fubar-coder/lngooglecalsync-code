@@ -38,14 +38,14 @@
                   <Group type="102" alignment="0" attributes="1">
                       <EmptySpace min="10" pref="10" max="10" attributes="0"/>
                       <Component id="jButton_Cancel" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="177" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="171" max="-2" attributes="0"/>
                       <Component id="jButton_Minimize" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="159" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="165" max="-2" attributes="0"/>
                       <Component id="jButton_Help" min="-2" max="-2" attributes="0"/>
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                   </Group>
-                  <Component id="jTabbedPane1" alignment="0" pref="0" max="32767" attributes="1"/>
-                  <Component id="jLabel16" alignment="0" max="32767" attributes="0"/>
+                  <Component id="jTabbedPane_Main" alignment="0" pref="0" max="32767" attributes="1"/>
+                  <Component id="jLabel_statusMessage" alignment="0" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -55,9 +55,9 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jLabel16" max="32767" attributes="0"/>
+              <Component id="jLabel_statusMessage" min="-2" pref="16" max="-2" attributes="0"/>
               <EmptySpace min="-2" pref="15" max="-2" attributes="0"/>
-              <Component id="jTabbedPane1" max="32767" attributes="0"/>
+              <Component id="jTabbedPane_Main" max="32767" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="jButton_Cancel" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -79,9 +79,9 @@
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton_CancelActionPerformed"/>
       </Events>
     </Component>
-    <Container class="javax.swing.JTabbedPane" name="jTabbedPane1">
+    <Container class="javax.swing.JTabbedPane" name="jTabbedPane_Main">
       <Events>
-        <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jTabbedPane1StateChanged"/>
+        <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jTabbedPane_MainStateChanged"/>
       </Events>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
@@ -99,18 +99,17 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jScrollPane1" alignment="0" pref="496" max="32767" attributes="0"/>
-                          <Group type="102" alignment="1" attributes="0">
-                              <Component id="jLabel10" min="-2" pref="263" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jLabel_NextSyncTime" max="32767" attributes="0"/>
+                          <Component id="jScrollPane1" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <EmptySpace min="-2" pref="230" max="-2" attributes="0"/>
+                              <Component id="jLabel_NextSyncTime" min="-2" pref="157" max="-2" attributes="0"/>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                              <Component id="jButton_Synchronize" min="-2" max="-2" attributes="0"/>
+                              <Component id="jButton_Synchronize" max="-2" attributes="0"/>
                           </Group>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -120,22 +119,16 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jButton_Synchronize" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel10" alignment="3" max="32767" attributes="0"/>
-                          <Component id="jLabel_NextSyncTime" alignment="3" max="32767" attributes="0"/>
+                          <Component id="jLabel_NextSyncTime" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
-                      <Component id="jScrollPane1" pref="408" max="32767" attributes="0"/>
+                      <Component id="jScrollPane1" pref="410" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
           </Layout>
           <SubComponents>
-            <Component class="javax.swing.JLabel" name="jLabel10">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Define Settings then click Synchronize."/>
-              </Properties>
-            </Component>
             <Component class="javax.swing.JButton" name="jButton_Synchronize">
               <Properties>
                 <Property name="mnemonic" type="int" value="121"/>
@@ -164,7 +157,7 @@
             </Container>
             <Component class="javax.swing.JLabel" name="jLabel_NextSyncTime">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Next Sync: 12:00 PM"/>
+                <Property name="text" type="java.lang.String" value="Next Scheduled Sync: 12:00 PM"/>
               </Properties>
             </Component>
           </SubComponents>
@@ -186,53 +179,47 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
                               <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                  <Component id="jCheckBox_SyncDescription" alignment="0" min="-2" pref="140" max="-2" attributes="1"/>
+                                  <Component id="jCheckBox_SyncLocationAndRoom" alignment="0" min="-2" pref="199" max="-2" attributes="1"/>
+                                  <Component id="jCheckBox_SyncMeetingAttendees" alignment="0" min="-2" pref="338" max="-2" attributes="1"/>
                                   <Group type="102" alignment="0" attributes="0">
-                                      <Component id="jCheckBox_DiagnosticMode" max="32767" attributes="1"/>
-                                      <EmptySpace min="-2" pref="352" max="-2" attributes="0"/>
-                                  </Group>
-                                  <Group type="102" attributes="0">
-                                      <Group type="103" groupAlignment="0" attributes="0">
-                                          <Component id="jCheckBox_SyncDescription" alignment="0" min="-2" pref="140" max="-2" attributes="1"/>
-                                          <Component id="jCheckBox_SyncAlarms" alignment="0" min="-2" pref="253" max="-2" attributes="1"/>
-                                          <Component id="jCheckBox_SyncOnStart" alignment="0" min="-2" pref="179" max="-2" attributes="1"/>
-                                          <Component id="jCheckBox_SyncLocationAndRoom" alignment="0" min="-2" pref="199" max="-2" attributes="1"/>
-                                          <Component id="jCheckBox_SyncMeetingAttendees" alignment="0" min="-2" pref="338" max="-2" attributes="1"/>
-                                      </Group>
-                                      <EmptySpace max="32767" attributes="0"/>
-                                  </Group>
-                                  <Group type="102" alignment="1" attributes="0">
-                                      <Component id="jLabel20" max="32767" attributes="1"/>
-                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jLabel20" max="-2" attributes="1"/>
+                                      <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
                                       <Component id="jTextField_DestinationCalendarName" min="-2" pref="330" max="-2" attributes="1"/>
-                                      <EmptySpace max="-2" attributes="0"/>
                                   </Group>
                                   <Group type="102" alignment="0" attributes="0">
-                                      <Component id="jCheckBox_SyncAllSubjectsToValue" pref="235" max="32767" attributes="1"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="jTextField_SyncAllSubjectsToThisValue" min="-2" pref="249" max="-2" attributes="1"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                  </Group>
-                                  <Group type="102" alignment="1" attributes="0">
-                                      <Component id="jCheckBox_SyncAtMinOffsets" max="32767" attributes="1"/>
-                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                                          <Component id="jCheckBox_SyncAtMinOffsets" max="32767" attributes="1"/>
+                                          <Component id="jCheckBox_SyncOnStart" alignment="1" pref="179" max="32767" attributes="1"/>
+                                      </Group>
+                                      <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
                                       <Component id="jTextField_SyncMinOffsets" min="-2" pref="298" max="-2" attributes="1"/>
-                                      <EmptySpace max="-2" attributes="0"/>
                                   </Group>
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <Component id="jCheckBox_SyncAllSubjectsToValue" min="-2" pref="253" max="-2" attributes="1"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jTextField_SyncAllSubjectsToThisValue" max="32767" attributes="1"/>
+                                  </Group>
+                                  <Component id="jCheckBox_DiagnosticMode" alignment="0" max="32767" attributes="1"/>
+                                  <Component id="jCheckBox_SyncAlarms" alignment="0" min="-2" pref="253" max="-2" attributes="1"/>
                               </Group>
+                              <EmptySpace pref="20" max="32767" attributes="0"/>
+                          </Group>
+                          <Group type="102" attributes="0">
+                              <Component id="jLabel17" max="32767" attributes="1"/>
+                              <EmptySpace max="32767" attributes="0"/>
                           </Group>
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" attributes="0">
-                                      <Group type="103" groupAlignment="1" max="-2" attributes="0">
-                                          <Component id="jLabel17" alignment="0" max="32767" attributes="1"/>
-                                          <Group type="102" alignment="0" attributes="0">
-                                              <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
-                                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                                  <Component id="jLabel22" alignment="0" pref="98" max="32767" attributes="1"/>
-                                                  <Component id="jLabel23" min="-2" max="-2" attributes="1"/>
-                                              </Group>
-                                          </Group>
+                                  <Component id="jLabel24" alignment="0" min="-2" pref="120" max="-2" attributes="1"/>
+                                  <Component id="jLabel21" alignment="0" min="-2" pref="120" max="-2" attributes="1"/>
+                                  <Component id="jLabel11" alignment="0" min="-2" pref="105" max="-2" attributes="1"/>
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <EmptySpace min="10" pref="10" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                          <Component id="jLabel22" alignment="0" pref="98" max="32767" attributes="1"/>
+                                          <Component id="jLabel23" min="-2" max="-2" attributes="1"/>
                                       </Group>
                                       <EmptySpace max="-2" attributes="0"/>
                                       <Group type="103" groupAlignment="0" attributes="0">
@@ -240,11 +227,8 @@
                                           <Component id="jTextField_SyncDaysInPast" alignment="0" min="-2" pref="39" max="-2" attributes="1"/>
                                       </Group>
                                   </Group>
-                                  <Component id="jLabel24" alignment="0" min="-2" pref="120" max="-2" attributes="1"/>
-                                  <Component id="jLabel21" alignment="0" min="-2" pref="120" max="-2" attributes="1"/>
-                                  <Component id="jLabel11" alignment="0" min="-2" pref="105" max="-2" attributes="1"/>
                               </Group>
-                              <EmptySpace pref="347" max="32767" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -258,18 +242,18 @@
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jTextField_DestinationCalendarName" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel20" alignment="3" max="32767" attributes="0"/>
+                          <Component id="jLabel20" alignment="3" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace min="-2" pref="3" max="-2" attributes="0"/>
-                      <Component id="jCheckBox_DiagnosticMode" pref="34" max="32767" attributes="0"/>
-                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="5" max="-2" attributes="0"/>
+                      <Component id="jCheckBox_DiagnosticMode" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Component id="jLabel24" min="-2" pref="19" max="-2" attributes="0"/>
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Component id="jCheckBox_SyncOnStart" min="-2" max="-2" attributes="0"/>
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jTextField_SyncMinOffsets" alignment="3" max="32767" attributes="0"/>
-                          <Component id="jCheckBox_SyncAtMinOffsets" alignment="3" max="32767" attributes="0"/>
+                          <Component id="jCheckBox_SyncAtMinOffsets" alignment="3" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
                       <Component id="jLabel21" min="-2" pref="19" max="-2" attributes="0"/>
@@ -285,23 +269,23 @@
                       </Group>
                       <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel17" min="-2" pref="19" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
-                      <Component id="jCheckBox_SyncLocationAndRoom" pref="35" max="32767" attributes="0"/>
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="jCheckBox_SyncLocationAndRoom" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="jCheckBox_SyncDescription" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="jCheckBox_SyncMeetingAttendees" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="jCheckBox_SyncAlarms" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="1" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" alignment="0" attributes="0">
                               <EmptySpace min="3" pref="3" max="-2" attributes="0"/>
-                              <Component id="jTextField_SyncAllSubjectsToThisValue" min="-2" pref="21" max="-2" attributes="0"/>
+                              <Component id="jTextField_SyncAllSubjectsToThisValue" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <Component id="jCheckBox_SyncAllSubjectsToValue" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace min="-2" pref="64" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="78" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -332,6 +316,7 @@
             <Component class="javax.swing.JCheckBox" name="jCheckBox_DiagnosticMode">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Diagnostic Mode"/>
+                <Property name="toolTipText" type="java.lang.String" value="When checked, additional info is shown during a sync and some .txt output files are created."/>
                 <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                   <Dimension value="[100, 23]"/>
                 </Property>
@@ -378,6 +363,9 @@
                   <Dimension value="[100, 23]"/>
                 </Property>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBox_SyncAlarmsActionPerformed"/>
+              </Events>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel20">
               <Properties>
@@ -456,7 +444,7 @@
             </Component>
             <Component class="javax.swing.JTextField" name="jTextField_SyncMinOffsets">
               <Properties>
-                <Property name="toolTipText" type="java.lang.String" value="The calendar name is case sensitive, i.e. &quot;my cal&quot; is different then &quot;My Cal&quot;."/>
+                <Property name="toolTipText" type="java.lang.String" value="For example, an offset of 15 means syncs happen every hour at 1:15, 2:15, 3:15, etc."/>
               </Properties>
               <Events>
                 <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField_SyncMinOffsetsFocusLost"/>
@@ -513,7 +501,7 @@
             </Component>
             <Component class="javax.swing.JTextField" name="jTextField_SyncAllSubjectsToThisValue">
               <Properties>
-                <Property name="toolTipText" type="java.lang.String" value="The calendar name is case sensitive, i.e. &quot;my cal&quot; is different then &quot;My Cal&quot;."/>
+                <Property name="toolTipText" type="java.lang.String" value=""/>
               </Properties>
               <Events>
                 <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField_SyncAllSubjectsToThisValueFocusLost"/>
@@ -545,72 +533,15 @@
                           </Group>
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" attributes="0">
-                                      <Component id="jLabel9" min="-2" pref="236" max="-2" attributes="1"/>
-                                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                                  </Group>
-                                  <Group type="102" attributes="0">
+                                  <Group type="102" alignment="0" attributes="0">
                                       <Component id="jLabel6" min="-2" pref="178" max="-2" attributes="1"/>
-                                      <EmptySpace max="32767" attributes="0"/>
+                                      <EmptySpace min="-2" pref="172" max="-2" attributes="0"/>
                                       <Component id="jButton_DetectLotusSettings" min="-2" max="-2" attributes="0"/>
                                   </Group>
+                                  <Component id="jLabel12" alignment="0" min="-2" pref="236" max="-2" attributes="1"/>
                                   <Group type="102" attributes="0">
                                       <EmptySpace min="10" pref="10" max="-2" attributes="0"/>
                                       <Group type="103" groupAlignment="0" attributes="0">
-                                          <Group type="102" alignment="0" attributes="0">
-                                              <Component id="jCheckBox_enableProxy" min="-2" max="-2" attributes="0"/>
-                                              <EmptySpace max="32767" attributes="0"/>
-                                              <Component id="jButton_DetectProxySettings" min="-2" max="-2" attributes="0"/>
-                                          </Group>
-                                          <Group type="102" alignment="0" attributes="0">
-                                              <EmptySpace min="-2" pref="21" max="-2" attributes="0"/>
-                                              <Group type="103" groupAlignment="0" attributes="0">
-                                                  <Group type="102" alignment="0" attributes="0">
-                                                      <Group type="103" groupAlignment="0" attributes="0">
-                                                          <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
-                                                          <Component id="jLabel18" min="-2" pref="126" max="-2" attributes="0"/>
-                                                          <Component id="jLabel19" alignment="0" min="-2" pref="130" max="-2" attributes="0"/>
-                                                      </Group>
-                                                      <EmptySpace max="32767" attributes="0"/>
-                                                  </Group>
-                                                  <Group type="102" attributes="0">
-                                                      <Component id="jLabel8" max="32767" attributes="0"/>
-                                                      <EmptySpace min="-2" pref="37" max="-2" attributes="0"/>
-                                                  </Group>
-                                              </Group>
-                                              <Group type="103" groupAlignment="0" attributes="0">
-                                                  <Group type="102" attributes="0">
-                                                      <Group type="103" groupAlignment="0" attributes="0">
-                                                          <Component id="jPasswordField_proxyPassword" max="32767" attributes="1"/>
-                                                          <Group type="102" attributes="0">
-                                                              <Component id="jTextField_proxyPort" min="-2" pref="63" max="-2" attributes="0"/>
-                                                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                                                          </Group>
-                                                          <Component id="jTextField_proxyUsername" max="32767" attributes="0"/>
-                                                      </Group>
-                                                      <EmptySpace min="-2" pref="171" max="-2" attributes="0"/>
-                                                  </Group>
-                                                  <Group type="102" attributes="0">
-                                                      <Component id="jTextField_proxyIP" min="-2" pref="168" max="-2" attributes="0"/>
-                                                      <EmptySpace min="-2" pref="152" max="-2" attributes="0"/>
-                                                  </Group>
-                                              </Group>
-                                          </Group>
-                                          <Group type="102" alignment="0" attributes="0">
-                                              <Group type="103" groupAlignment="1" attributes="0">
-                                                  <Component id="jLabel4" max="32767" attributes="1"/>
-                                                  <Component id="jLabel3" max="32767" attributes="1"/>
-                                              </Group>
-                                              <EmptySpace max="32767" attributes="0"/>
-                                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                                  <Component id="jPasswordField_GooglePassword" max="32767" attributes="1"/>
-                                                  <Component id="jTextField_GoogleUsername" pref="350" max="32767" attributes="1"/>
-                                              </Group>
-                                          </Group>
-                                          <Group type="102" attributes="0">
-                                              <Component id="jCheckBox_GoogleSSL" min="-2" pref="453" max="-2" attributes="1"/>
-                                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                                          </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Group type="103" groupAlignment="0" attributes="0">
                                                   <Component id="jLabel14" linkSize="3" min="-2" pref="69" max="-2" attributes="1"/>
@@ -620,25 +551,80 @@
                                               </Group>
                                               <EmptySpace max="-2" attributes="0"/>
                                               <Group type="103" groupAlignment="0" attributes="0">
-                                                  <Component id="jPasswordField_LotusNotesPassword" max="32767" attributes="1"/>
                                                   <Group type="102" attributes="0">
                                                       <Component id="jTextField_LotusNotesServer" min="-2" pref="251" max="-2" attributes="1"/>
                                                       <EmptySpace max="-2" attributes="0"/>
                                                       <Component id="jCheckBox_LotusNotesServerIsLocal" pref="0" max="32767" attributes="1"/>
                                                   </Group>
-                                                  <Group type="102" attributes="0">
-                                                      <Group type="103" groupAlignment="0" attributes="0">
-                                                          <Component id="jTextField_LotusNotesMailFile" alignment="0" min="-2" pref="351" max="-2" attributes="1"/>
-                                                          <Component id="jTextField_LotusNotesServerDateFormat" min="-2" pref="102" max="-2" attributes="1"/>
+                                                  <Group type="102" alignment="0" attributes="0">
+                                                      <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                                                          <Component id="jPasswordField_LotusNotesPassword" alignment="0" max="32767" attributes="1"/>
+                                                          <Component id="jTextField_LotusNotesMailFile" alignment="0" pref="351" max="32767" attributes="1"/>
+                                                          <Component id="jTextField_LotusNotesServerDateFormat" alignment="0" min="-2" pref="102" max="-2" attributes="1"/>
                                                       </Group>
                                                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                                                   </Group>
                                               </Group>
                                           </Group>
+                                          <Group type="102" alignment="0" attributes="0">
+                                              <EmptySpace min="21" pref="21" max="-2" attributes="0"/>
+                                              <Group type="103" groupAlignment="0" attributes="0">
+                                                  <Group type="102" attributes="0">
+                                                      <Group type="103" groupAlignment="0" attributes="0">
+                                                          <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
+                                                          <Component id="jLabel18" min="-2" pref="126" max="-2" attributes="0"/>
+                                                          <Component id="jLabel19" alignment="0" min="-2" pref="130" max="-2" attributes="0"/>
+                                                      </Group>
+                                                      <Group type="103" groupAlignment="0" attributes="0">
+                                                          <Group type="102" alignment="0" attributes="0">
+                                                              <EmptySpace max="-2" attributes="0"/>
+                                                              <Group type="103" groupAlignment="0" attributes="0">
+                                                                  <Component id="jTextField_proxyUsername" min="-2" pref="168" max="-2" attributes="0"/>
+                                                                  <Component id="jPasswordField_proxyPassword" min="-2" pref="168" max="-2" attributes="1"/>
+                                                              </Group>
+                                                          </Group>
+                                                          <Group type="102" alignment="0" attributes="0">
+                                                              <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
+                                                              <Group type="103" groupAlignment="0" attributes="0">
+                                                                  <Component id="jTextField_proxyIP" min="-2" pref="168" max="-2" attributes="0"/>
+                                                                  <Component id="jTextField_proxyPort" min="-2" pref="63" max="-2" attributes="0"/>
+                                                              </Group>
+                                                          </Group>
+                                                      </Group>
+                                                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                                                  </Group>
+                                                  <Component id="jLabel8" max="-2" attributes="0"/>
+                                              </Group>
+                                          </Group>
+                                          <Group type="102" attributes="0">
+                                              <Group type="103" groupAlignment="0" attributes="0">
+                                                  <Group type="102" alignment="0" attributes="0">
+                                                      <Component id="jLabel3" max="-2" attributes="1"/>
+                                                      <EmptySpace min="-2" pref="58" max="-2" attributes="0"/>
+                                                      <Component id="jTextField_GoogleUsername" min="-2" pref="351" max="-2" attributes="1"/>
+                                                  </Group>
+                                                  <Group type="102" alignment="0" attributes="0">
+                                                      <Component id="jCheckBox_enableProxy" min="-2" max="-2" attributes="0"/>
+                                                      <EmptySpace min="-2" pref="121" max="-2" attributes="0"/>
+                                                      <Component id="jButton_DetectProxySettings" min="-2" max="-2" attributes="0"/>
+                                                  </Group>
+                                              </Group>
+                                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                                          </Group>
                                       </Group>
                                   </Group>
                               </Group>
                               <EmptySpace min="31" pref="31" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="jLabel9" alignment="0" min="-2" pref="236" max="-2" attributes="1"/>
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <EmptySpace min="10" pref="10" max="-2" attributes="0"/>
+                                      <Component id="jCheckBox_dontSaveSensitiveData" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                              </Group>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -677,29 +663,22 @@
                       <Component id="jLabel5" min="-2" pref="19" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="1" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="jLabel3" alignment="3" max="32767" attributes="0"/>
-                          <Component id="jTextField_GoogleUsername" alignment="3" max="32767" attributes="0"/>
+                          <Component id="jLabel3" alignment="3" max="-2" attributes="0"/>
+                          <Component id="jTextField_GoogleUsername" alignment="3" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                      <Component id="jLabel12" min="-2" pref="19" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="jLabel4" alignment="3" max="32767" attributes="0"/>
-                          <Component id="jPasswordField_GooglePassword" alignment="3" max="32767" attributes="0"/>
-                      </Group>
-                      <EmptySpace min="-2" pref="33" max="-2" attributes="0"/>
-                      <Component id="jLabel9" min="-2" pref="19" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
-                      <Component id="jCheckBox_GoogleSSL" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="jCheckBox_enableProxy" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jButton_DetectProxySettings" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jCheckBox_enableProxy" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace min="-2" pref="1" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="jTextField_proxyIP" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel8" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="jTextField_proxyIP" alignment="3" max="32767" attributes="0"/>
                       </Group>
-                      <EmptySpace min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jTextField_proxyPort" alignment="3" max="32767" attributes="0"/>
@@ -714,33 +693,27 @@
                           <Component id="jLabel19" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jPasswordField_proxyPassword" alignment="3" max="32767" attributes="0"/>
                       </Group>
-                      <EmptySpace min="-2" pref="33" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="jLabel9" min="-2" pref="19" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="jCheckBox_dontSaveSensitiveData" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="44" max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
           </Layout>
           <SubComponents>
-            <Component class="javax.swing.JCheckBox" name="jCheckBox_GoogleSSL">
-              <Properties>
-                <Property name="selected" type="boolean" value="true"/>
-                <Property name="text" type="java.lang.String" value="Connect to Google Using SSL/TLS (recommended)"/>
-              </Properties>
-            </Component>
-            <Component class="javax.swing.JPasswordField" name="jPasswordField_GooglePassword">
-            </Component>
-            <Component class="javax.swing.JLabel" name="jLabel4">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Password"/>
-              </Properties>
-            </Component>
             <Component class="javax.swing.JLabel" name="jLabel3">
               <Properties>
-                <Property name="text" type="java.lang.String" value="ID/Email Address"/>
+                <Property name="text" type="java.lang.String" value="Email Address"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="jTextField_GoogleUsername">
               <Properties>
                 <Property name="text" type="java.lang.String" value="user@google.com"/>
+                <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                  <Dimension value="[6, 20]"/>
+                </Property>
               </Properties>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel5">
@@ -788,7 +761,7 @@
                 <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                   <Color blue="ff" green="33" red="33" type="rgb"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Network Settings"/>
+                <Property name="text" type="java.lang.String" value="Security Settings"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JCheckBox" name="jCheckBox_enableProxy">
@@ -796,7 +769,7 @@
                 <Property name="text" type="java.lang.String" value="Use Proxy Server to Reach the Internet"/>
               </Properties>
               <Events>
-                <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jCheckBox_enableProxyStateChanged"/>
+                <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="jCheckBox_enableProxyItemStateChanged"/>
               </Events>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel8">
@@ -894,20 +867,43 @@
                 <Property name="text" type="java.lang.String" value="Detect"/>
                 <Property name="toolTipText" type="java.lang.String" value="Generally you should leave this as &quot;Detect&quot;. See Help for more information."/>
               </Properties>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="jCheckBox_dontSaveSensitiveData">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="For Security, Don&apos;t Save Passwords on Exit"/>
+                <Property name="toolTipText" type="java.lang.String" value="When checked, the Lotus Notes and Proxy passwords will not be saved to the config file and the user will have to enter the passwords each time LNGS is started."/>
+              </Properties>
               <Events>
-                <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField_LotusNotesServerDateFormatFocusLost"/>
+                <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="jCheckBox_dontSaveSensitiveDataItemStateChanged"/>
               </Events>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel12">
+              <Properties>
+                <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                  <Color blue="ff" green="33" red="33" type="rgb"/>
+                </Property>
+                <Property name="text" type="java.lang.String" value="Network Settings"/>
+              </Properties>
             </Component>
           </SubComponents>
         </Container>
       </SubComponents>
     </Container>
-    <Component class="javax.swing.JLabel" name="jLabel16">
+    <Component class="javax.swing.JLabel" name="jLabel_statusMessage">
       <Properties>
-        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-          <Color blue="ff" green="33" red="33" type="rgb"/>
+        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="14" green="94" red="ff" type="rgb"/>
+        </Property>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="Tahoma" size="11" style="1"/>
         </Property>
         <Property name="text" type="java.lang.String" value="This tool synchronizes a Lotus Notes calendar to a Google calendar."/>
+        <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[324, 16]"/>
+        </Property>
+        <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[324, 16]"/>
+        </Property>
       </Properties>
     </Component>
     <Component class="javax.swing.JButton" name="jButton_Help">

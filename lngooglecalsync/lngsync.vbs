@@ -12,11 +12,11 @@ lotusIniPath = ""
 javaPath = ""
 ' Set to 1 to use the version of Java installed with Lotus.
 ' The Lotus version is guarenteed to work with Notes.jar.
-' But we also need at least Java v1.6 to work with LNGS.jar.
+' But we also need at least Java v1.6 to work with lngsync.jar.
 ' You will have to set this flag to 0 if you have Lotus v7 or earlier
 ' (because it comes with Java 1.4).
 ' Simple, eh?
-useLotusJava = 0
+useLotusJava = 1
 
 
 
@@ -69,9 +69,10 @@ On Error GoTo 0
 lotusJarPath = lotusPath & "\jvm\lib\ext\Notes.jar"
 if not oFileSys.FileExists(lotusJarPath) then
 	lotusJarPath = lotusPath & "\Notes.jar"
-elseif not oFileSys.FileExists(lotusJarPath) then
-	MsgBox "The Notes.jar file could not be found. It is very unlikely the application will be able to run successfully.", _
-	vbExclamation, msgboxTitle
+  if not oFileSys.FileExists(lotusJarPath) then
+	  MsgBox "The Notes.jar file could not be found. It is very unlikely the application will be able to run successfully.", _
+	    vbExclamation, msgboxTitle
+  end if
 end if
 
 if WScript.Arguments.Count > 0 then
@@ -86,23 +87,26 @@ processPath = oEnv.Item("PATH")
 oEnv("PATH") = lotusPath & ";" & lotusIniPath & ";" & processPath  
 
 ' Set the classpath so Notes.jar can be found
-classPath = """" & lotusJarPath & """;.\lngsync.jar"
+classPath = lotusJarPath & ";" & oShell.CurrentDirectory & "\lngsync.jar"
 oEnv("CLASSPATH") = classPath
 
 if javaPath = "" then
-	' Get the path to the version of Java installed with Lotus Notes.
-	' It is safest to use the Lotus Java for compatibility with Notes.jar.
 	if useLotusJava then
-		if oFileSys.FolderExists(lotusPath & "\jvm\bin") then
-			javaPath = lotusPath & "\jvm\bin\javaw.exe"
-		else
-			useLotusJava = 0
+		' Use the version of Java installed with Lotus Notes.
+		' It is safest to use this version for compatibility with Notes.jar.
+		javaPath = lotusPath & "\jvm\bin\javaw.exe"
+	end if
+
+	if not oFileSys.FileExists(javaPath) then
+		useLotusJava = 0
+
+		' Get the path from JAVA_HOME
+		javaPath = oEnv.Item("JAVA_HOME") & "\bin\javaw.exe"
+		if not oFileSys.FileExists(javaPath) then
+			' Let the OS find Java via the PATH
+			javaPath = "javaw.exe"
 		end if
 	end if
-	' If present, get the path from JAVA_HOME
-	if javaPath = "" then javaPath = oEnv.Item("JAVA_HOME") & "\bin\javaw.exe"
-	' Let the OS find Java via the PATH
-	if javaPath = "" then javaPath = "javaw.exe"
 end if
 
 dim debugInfo, oLogFile, logFilename
@@ -110,7 +114,7 @@ logFilename = "lngsync.log"
 debugInfo = "useLotusJava: " & useLotusJava & vbCRLF & vbCRLF & "lotusPath: " & lotusPath & vbCRLF & vbCRLF & "lotusJarPath: " & lotusJarPath & vbCRLF & vbCRLF & "lotusIniPath: " & lotusIniPath & vbCRLF & vbCRLF & "classPath: " & classPath & vbCRLF & vbCRLF & "javaPath: " & javaPath & vbCRLF & vbCRLF & "appParm: " & appParm
 'MsgBox "DEBUG INFO" & vbCRLF & vbCRLF & debugInfo, vbOKOnly, "DEBUG" 
 Set oLogFile = oFileSys.CreateTextFile(logFilename, TRUE)
-oLogFile.WriteLine(debugInfo)
+oLogFile.WriteLine(debugInfo & vbCRLF)
 oLogFile.Close
 
 
@@ -125,12 +129,11 @@ Do While oJavawExec.Status = 0
 Loop 
 
 if silentMode then
-	' Write stdout and stderr to a log file
-	Dim oOutputFile
-	Set oOutputFile = oFileSys.CreateTextFile(logFilename, TRUE)
-	oOutputFile.WriteLine(oJavawExec.StdOut.ReadAll)
-	oOutputFile.WriteLine(oJavawExec.StdErr.ReadAll)
-	oOutputFile.Close
+	' Append stdout and stderr to our log file
+	Set oLogFile = oFileSys.OpenTextFile(logFilename, 8, TRUE)
+	oLogFile.WriteLine(oJavawExec.StdOut.ReadAll)
+	oLogFile.WriteLine(oJavawExec.StdErr.ReadAll)
+	oLogFile.Close
 end if
 
 if oJavawExec.ExitCode > 0 then

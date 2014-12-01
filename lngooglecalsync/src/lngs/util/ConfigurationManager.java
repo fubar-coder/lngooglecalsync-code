@@ -6,7 +6,12 @@ package lngs.util;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -26,12 +31,51 @@ public class ConfigurationManager {
      * @throws Exception due to I/O
      */
     public void writeConfig() throws IOException {
-// This line will delete a property from the config file
-//        config.remove(PROP_GOOGLE_PASSWORD);
-        // Starting with v2 of the properties file, we encode passwords but keep them plain in memory
-        config.setProperty(PROP_GOOGLE_PASSWORD, encodePassword(getGooglePassword()));
-        config.setProperty(PROP_PROXY_PASSWORD, encodePassword(getGoogleProxyPassword()));
-        config.setProperty(PROP_LOTUS_NOTES_PASSWORD, encodePassword(getLotusNotesPassword()));
+        // There may be old, unused key/value pairs in the config file.
+        // We want to delete these. We'll do it in 3 easy steps.
+        
+        // (1) Clone the list of keys from the config file
+        Hashtable keysToDelete = (Hashtable)config.clone();
+
+        // (2) Use reflection to get the list of keys in this class. These are
+        // all the good/current keys we want to keep.
+        // Remove these good keys from our cloned list.
+        Field[] fields = ConfigurationManager.class.getDeclaredFields();
+        for (Field field : fields) {
+            try {
+                if (field.getName().startsWith("PROP_")) {
+                    String key = field.get(this).toString();
+                    if (keysToDelete.containsKey(key)) {
+                        // Remove the key from our clone list
+                        keysToDelete.remove(key);
+                    }
+                }
+            } catch (IllegalArgumentException ex) {
+                // Do nothing
+            } catch (IllegalAccessException ex) {
+                // Do nothing
+            }
+        }
+        
+        // (3) Any keys still in the cloned list are bad and need to be
+        // deleted from the original config list. When the config list is
+        // persisted, the unused keys will no longer be there.
+        @SuppressWarnings("unchecked")
+        Enumeration<String> enumKey = keysToDelete.keys();
+        while(enumKey.hasMoreElements()) {
+            config.remove(enumKey.nextElement());
+        }
+
+        
+        if (getDontSaveSensitiveData()) {
+            // Save empty strings for the passwords
+            config.setProperty(PROP_PROXY_PASSWORD, "");
+            config.setProperty(PROP_LOTUS_NOTES_PASSWORD, "");            
+        } else {
+            // Starting with v2 of the properties file, we encode passwords but keep them plain in memory
+            config.setProperty(PROP_PROXY_PASSWORD, encodePassword(getGoogleProxyPassword()));
+            config.setProperty(PROP_LOTUS_NOTES_PASSWORD, encodePassword(getLotusNotesPassword()));
+        }
 
         if (getConfigVersion() < currConfigVersion) {
             config.setProperty(PROP_CONFIG_VERSION, Integer.toString(currConfigVersion));
@@ -48,7 +92,6 @@ public class ConfigurationManager {
         config.load(new FileInputStream(configFilename));
         if (getConfigVersion() >= 2) {
             // Starting with v2 of the properties file, we encode passwords but keep them plain in memory
-            config.setProperty(PROP_GOOGLE_PASSWORD, decodePassword(getGooglePassword()));
             config.setProperty(PROP_PROXY_PASSWORD, decodePassword(getGoogleProxyPassword()));
             config.setProperty(PROP_LOTUS_NOTES_PASSWORD, decodePassword(getLotusNotesPassword()));
         }
@@ -82,10 +125,6 @@ public class ConfigurationManager {
         config.setProperty(PROP_GOOGLE_USERNAME, googleUserName);
     }
 
-    public void setGooglePassword(String googlePassword) {
-        config.setProperty(PROP_GOOGLE_PASSWORD, googlePassword);
-    }
-
     public void setGoogleProxyIP(String googleProxyIP) {
         config.setProperty(PROP_PROXY_IP, googleProxyIP);
     }
@@ -104,10 +143,6 @@ public class ConfigurationManager {
 
     public void setGoogleEnableProxy(boolean googleEnableProxy) {
         setBooleanProperty(PROP_PROXY_ENABLE, googleEnableProxy);
-    }
-
-    public void setGoogleUseSSL(boolean googleUseSSL) {
-        setBooleanProperty(PROP_USE_SSL, googleUseSSL);
     }
 
     public void setGoogleCalendarName(String value) {
@@ -156,6 +191,10 @@ public class ConfigurationManager {
 
     public void setSyncDaysInPast(int value) {
         config.setProperty(PROP_SYNC_DAYS_IN_PAST, Integer.toString(value));
+    }
+
+    public void setDontSaveSensitiveData(boolean value) {
+        setBooleanProperty(PROP_DONT_SAVE_SENSITIVE_DATA, value);
     }
 
     public void setLotusNotesPassword(String value) {
@@ -209,10 +248,6 @@ public class ConfigurationManager {
         return getStringProperty(PROP_GOOGLE_USERNAME);
     }
 
-    public String getGooglePassword() {
-        return getStringProperty(PROP_GOOGLE_PASSWORD);
-    }
-
     public String getGoogleProxyIP() {
         return getStringProperty(PROP_PROXY_IP);
     }
@@ -231,10 +266,6 @@ public class ConfigurationManager {
 
     public boolean getGoogleEnableProxy() {
         return getBooleanProperty(PROP_PROXY_ENABLE);
-    }
-
-    public boolean getGoogleUseSSL() {
-        return getBooleanProperty(PROP_USE_SSL);
     }
 
     public String getGoogleCalendarName() {
@@ -296,6 +327,10 @@ public class ConfigurationManager {
 
     public int getSyncDaysInPast() {
         return getIntegerProperty(PROP_SYNC_DAYS_IN_PAST, 7);
+    }
+
+    public boolean getDontSaveSensitiveData() {
+        return getBooleanProperty(PROP_DONT_SAVE_SENSITIVE_DATA);
     }
 
     // Read a property. If it isn't found, return "".
@@ -377,7 +412,7 @@ public class ConfigurationManager {
     // Version stamp for the config-file format.
     // IMPORTANT: Update this version number whenever there is a format change to the
     // config file, e.g. adding a new setting.
-    protected static final int currConfigVersion = 7;
+    protected static final int currConfigVersion = 8;
     protected static final String PROP_CONFIG_VERSION = "ConfigVersion";
 
     protected static final String PROP_APP_VERSION = "ApplicationVersion";
@@ -400,15 +435,14 @@ public class ConfigurationManager {
     protected static final String PROP_SYNC_MEETING_ATTENDEES = "SyncMeetingAttendees";
     protected static final String PROP_SYNC_DAYS_IN_FUTURE = "SyncDaysInFuture";
     protected static final String PROP_SYNC_DAYS_IN_PAST = "SyncDaysInPast";
+    protected static final String PROP_DONT_SAVE_SENSITIVE_DATA = "DontSaveSensitiveData";
 
     protected static final String PROP_PROXY_ENABLE = "GoogleEnableProxy";
     protected static final String PROP_PROXY_USERNAME = "GoogleProxyUsername";
     protected static final String PROP_PROXY_PASSWORD = "GoogleProxyPassword";
     protected static final String PROP_PROXY_IP = "GoogleProxyIP";
     protected static final String PROP_PROXY_PORT = "GoogleProxyPort";
-    protected static final String PROP_USE_SSL = "GoogleUseSSL";
     protected static final String PROP_GOOGLE_USERNAME = "GoogleUsername";
-    protected static final String PROP_GOOGLE_PASSWORD = "GooglePassword";
     protected static final String PROP_GOOGLE_CALENDAR_NAME = "GoogleCalendarName";
 
     protected Properties config;

@@ -4,6 +4,8 @@
 package lngs;
 
 import java.awt.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import javax.swing.*;
 
 public class NewVersionDialog extends javax.swing.JDialog {
@@ -56,7 +58,7 @@ public class NewVersionDialog extends javax.swing.JDialog {
 
         jTextPane_Changes.setEditable(false);
         jTextPane_Changes.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
-        jTextPane_Changes.setText("o Enhancement: The Google authorization credential file is now stored in the LNGS directory, in the file named client_credential. You can delete the old credential directory. For Windows it was \"C:\\Users\\<USERNAME>\\.store\" or \"C:\\Documents and Settings\\<USERNAME>\\.store\". For OS X and Linux it was was \"~/.store\".\no Fix: Unchecking \"Alarms Become Google Reminders\" should now work properly.\no Fix: In lngsync.vbs, removed the double quotes around the Lotus jar filename. This caused problems for some users and was not needed.");
+        jTextPane_Changes.setText("o Fix: Lotus Notes entires marked as conflicts (i.e. the $Conflict field exists) are now ignored. Conflicts aren't visible in Notes, but LNGS was creating them in GCal.\no Fix: On a couple Ubuntu systems, LNGS couldn't detect the system tray so the main window was hidden and there was no tray icon. Now if a system tray icon can't be created, the LNGS window is made visible but minimized. \no Fix: The lngsync.vbs script now uses the full path to lngsync.jar (not just the relative ./ path). This resolves an access denied error for some users. Thanks to dregad.\no Enhancement: The lngsync.vbs script now logs more information to lngsync.log when in silent mode. It is also smarter about locating the Java executable.\no Enhancement: The lngsync.sh script was changed for OS X to better find a compatible version of Java to use with LNGS.\no Enhancement: The \"Google Password\" and \"Connect to Google Using SSL/TLS\" fields have been removed. These are no longer needed since moving to Google API v3 and OAuth.\no Enhancement: This new option was added: \"For Security, Don't Save Passwords on Exit\". When checked, the Lotus Notes and Proxy passwords will not be saved to the LNGS config file and the user will have to enter the passwords each time LNGS is started.\no Enhancement: Some changes were made to the source code to handle Exceptions more accurately.\no Enhancement: The Sync Days in Past/Future values are now validated to make sure they are positive numbers.\no Enhancement: Version 1.12 of the LNConnectivityTest app has been put in svn. Now all test output is logged to lnconntest.log.\no Enhancement: A new GCalConnectivityTest app has been put in svn. This app can be used to diagnose problems connecting to Google Calendar.\no Enhancement: In the Help File, added several items to the Troubleshooting section and added more information on how to properly create a Google Client ID.\no Quote: Every saint has a past, and every sinner has a future. - Oscar Wilde");
         jScrollPane2.setViewportView(jTextPane_Changes);
 
         jLabel_Heading1.setText("This version is being run for the first time in GUI mode.");
@@ -158,18 +160,32 @@ public class NewVersionDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_jLabel_HelpFileMouseExited
 
     private void jLabel_HelpFileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel_HelpFileMouseClicked
+        Exception caughtEx = null;
         try {
             java.awt.Desktop.getDesktop().browse(new java.net.URI(helpFilename));
-        } catch (Exception ex) {
-            javax.swing.JOptionPane.showMessageDialog(this, "There was a problem opening the help file.", "Can't Open Help File", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            caughtEx = ex;
+        } catch (URISyntaxException ex) {
+            caughtEx = ex;
+        } finally {
+            if (caughtEx != null) {
+                javax.swing.JOptionPane.showMessageDialog(this, "There was a problem opening the help file.", "Can't Open Help File", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }//GEN-LAST:event_jLabel_HelpFileMouseClicked
 
     private void jLabel_DonateMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel_DonateMouseClicked
+        Exception caughtEx = null;
         try {
             java.awt.Desktop.getDesktop().browse(new java.net.URI("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JSNX6GEWA8JK8&lc=US&item_name=LNGS&item_number=LNGS&amount=5%2e00&currency_code=USD&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted"));
-        } catch (Exception ex) {
-            javax.swing.JOptionPane.showMessageDialog(this, "There was a problem opening the help file.", "Can't Open Donate Page", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            caughtEx = ex;
+        } catch (URISyntaxException ex) {
+            caughtEx = ex;
+        } finally {
+            if (caughtEx != null) {
+                javax.swing.JOptionPane.showMessageDialog(this, "There was a problem opening the Donate page.", "Can't Open Donate Page", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }//GEN-LAST:event_jLabel_DonateMouseClicked
 

@@ -6,30 +6,25 @@ package lngs.util;
 import java.net.Authenticator;
 
 public class ProxyManager {
-
     public ProxyManager() {
         proxyHost = "";
         proxyPort = "";
-        enabled = false;
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return enableProxyAuthentication;
     }
 
     public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        //debug("configured proxy");
+        enableProxyAuthentication = enabled;
     }
 
     public void setProxyHost(String proxyHost) {
         this.proxyHost = proxyHost;
-        //debug ("set proxy host");
     }
 
     public void setProxyPort(String proxyPort) {
         this.proxyPort = proxyPort;
-        //debug ("set proxy port");
     }
 
     public String getProxyHost() {
@@ -38,6 +33,10 @@ public class ProxyManager {
 
     public String getProxyPort() {
         return proxyPort;
+    }
+    
+    public int getProxyPortAsInt() {
+        return Integer.parseInt(proxyPort);
     }
 
     public void enableProxyAuthentication(boolean enableProxyAuthentication) {
@@ -68,7 +67,6 @@ public class ProxyManager {
         System.getProperties().put("proxySet", "true");
         System.getProperties().put("proxyHost", proxyHost);
         System.getProperties().put("proxyPort", proxyPort);
-        //debug("proxy has been activated");
     }
 
     public void deactivateNow() {
@@ -80,18 +78,8 @@ public class ProxyManager {
         System.getProperties().put("proxyHost", "");
         System.getProperties().put("proxyPort", "");
         enableProxyAuthentication = false;
-        //debug ("proxy has been deactivated");
     }
 
-    private void debug(String message) {
-        if (debug) {
-            System.out.println("DEBUG: " + message);
-        }
-    }
-    
     String proxyHost, proxyPort, proxyUser, proxyPassword;
-    boolean enabled;
-    // enable or disable debug messages concerning the proxy configuration process
-    boolean debug = false;
     boolean enableProxyAuthentication = false;
 }
