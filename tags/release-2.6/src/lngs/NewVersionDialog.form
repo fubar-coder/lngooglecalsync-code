@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.8" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JDialogFormInfo">
+  <Properties>
+    <Property name="defaultCloseOperation" type="int" value="2"/>
+    <Property name="title" type="java.lang.String" value="New Version Announcement"/>
+    <Property name="resizable" type="boolean" value="false"/>
+  </Properties>
+  <SyntheticProperties>
+    <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
+  </SyntheticProperties>
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" attributes="0">
+                              <EmptySpace min="-2" pref="330" max="-2" attributes="0"/>
+                              <Component id="jButton_OK" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="55" max="-2" attributes="0"/>
+                              <Component id="jLabel_Donate" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Group type="102" attributes="0">
+                                      <Component id="jLabel_Heading1" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jLabel_Heading3" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jLabel_HelpFile" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <Component id="jLabel_Heading2" min="-2" pref="666" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                      </Group>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="jScrollPane2" pref="735" max="32767" attributes="0"/>
+                  </Group>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="jLabel_Heading1" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel_Heading3" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel_HelpFile" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="jLabel_Heading2" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="jScrollPane2" pref="211" max="32767" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="jButton_OK" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jLabel_Donate" alignment="3" min="-2" pref="14" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Component class="javax.swing.JButton" name="jButton_OK">
+      <Properties>
+        <Property name="mnemonic" type="int" value="79"/>
+        <Property name="text" type="java.lang.String" value="OK"/>
+        <Property name="selected" type="boolean" value="true"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton_OKActionPerformed"/>
+      </Events>
+    </Component>
+    <Container class="javax.swing.JScrollPane" name="jScrollPane2">
+      <AuxValues>
+        <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
+      </AuxValues>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+      <SubComponents>
+        <Component class="javax.swing.JTextPane" name="jTextPane_Changes">
+          <Properties>
+            <Property name="editable" type="boolean" value="false"/>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Tahoma" size="12" style="0"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="o Fix: Lotus Notes entires marked as conflicts (i.e. the $Conflict field exists) are now ignored. Conflicts aren&apos;t visible in Notes, but LNGS was creating them in GCal.&#xa;o Fix: On a couple Ubuntu systems, LNGS couldn&apos;t detect the system tray so the main window was hidden and there was no tray icon. Now if a system tray icon can&apos;t be created, the LNGS window is made visible but minimized. &#xa;o Fix: The lngsync.vbs script now uses the full path to lngsync.jar (not just the relative ./ path). This resolves an access denied error for some users. Thanks to dregad.&#xa;o Enhancement: The lngsync.vbs script now logs more information to lngsync.log when in silent mode. It is also smarter about locating the Java executable.&#xa;o Enhancement: The lngsync.sh script was changed for OS X to better find a compatible version of Java to use with LNGS.&#xa;o Enhancement: The &quot;Google Password&quot; and &quot;Connect to Google Using SSL/TLS&quot; fields have been removed. These are no longer needed since moving to Google API v3 and OAuth.&#xa;o Enhancement: This new option was added: &quot;For Security, Don&apos;t Save Passwords on Exit&quot;. When checked, the Lotus Notes and Proxy passwords will not be saved to the LNGS config file and the user will have to enter the passwords each time LNGS is started.&#xa;o Enhancement: Some changes were made to the source code to handle Exceptions more accurately.&#xa;o Enhancement: The Sync Days in Past/Future values are now validated to make sure they are positive numbers.&#xa;o Enhancement: Version 1.12 of the LNConnectivityTest app has been put in svn. Now all test output is logged to lnconntest.log.&#xa;o Enhancement: A new GCalConnectivityTest app has been put in svn. This app can be used to diagnose problems connecting to Google Calendar.&#xa;o Enhancement: In the Help File, added several items to the Troubleshooting section and added more information on how to properly create a Google Client ID.&#xa;o Quote: Every saint has a past, and every sinner has a future. - Oscar Wilde"/>
+          </Properties>
+        </Component>
+      </SubComponents>
+    </Container>
+    <Component class="javax.swing.JLabel" name="jLabel_Heading1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="This version is being run for the first time in GUI mode."/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel_HelpFile">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="&lt;HTML&gt;&lt;FONT color=\u005c&quot;#000099\u005c&quot;&gt;&lt;U&gt;Help File.&lt;/U&gt;&lt;/FONT&gt;&lt;/HTML&gt;" containsInvalidXMLChars="true"/>
+      </Properties>
+      <Events>
+        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jLabel_HelpFileMouseClicked"/>
+        <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jLabel_HelpFileMouseEntered"/>
+        <EventHandler event="mouseExited" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jLabel_HelpFileMouseExited"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel_Heading3">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Here are the changes from the History Log in the"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel_Donate">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="&lt;HTML&gt;&lt;FONT color=\u005c&quot;#000099\u005c&quot;&gt;&lt;U&gt;Donate $5 (PayPal)&lt;/U&gt;&lt;/FONT&gt;&lt;/HTML&gt;" containsInvalidXMLChars="true"/>
+      </Properties>
+      <Events>
+        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jLabel_DonateMouseClicked"/>
+        <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jLabel_DonateMouseEntered"/>
+        <EventHandler event="mouseExited" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jLabel_DonateMouseExited"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel_Heading2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="&lt;html&gt;To upgrade:&lt;br&gt;1. Unzip the new files.&lt;br&gt;2. Copy your old lngsync.config file into the new-version directory.&lt;br&gt;3. If you modified the old lngsync.vbs or lngsync.sh files, then merge those changes into the new vbs/sh files.&lt;br&gt;4. Copy your old client_secret.json file into the new-version directory.&lt;/html&gt;"/>
+        <Property name="verticalTextPosition" type="int" value="1"/>
+      </Properties>
+    </Component>
+  </SubComponents>
+</Form>
