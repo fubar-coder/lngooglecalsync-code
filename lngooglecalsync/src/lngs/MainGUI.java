@@ -94,12 +94,12 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             syncTimer.setRepeats(true);
             syncTimer.stop();
 
-            // Initialize proxy bean
-            proxy = new ProxyManager();
+            // Initialize proxy manager
+            proxyMgr = new ProxyManager();
 
             // Load configuration bean
-            config = new ConfigurationManager();
-            config.readConfig();
+            configMgr = new ConfigurationManager();
+            configMgr.readConfig();
 
             loadSettings();
 
@@ -124,7 +124,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             // If this is a new version, then make the window visible by default because we
             // show a new-version message later
-            if ( ! config.getApplicationVersion().equals(appVersion) || jCheckBox_dontSaveSensitiveData.isSelected()) {
+            if ( ! configMgr.getApplicationVersion().equals(appVersion) || jCheckBox_dontSaveSensitiveData.isSelected()) {
                 setVisible(true);
                 setExtendedState(NORMAL);
 
@@ -255,14 +255,14 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             startTime = System.currentTimeMillis();
 
-            proxy.deactivateNow();
+            proxyMgr.deactivateNow();
 
             statusBarSet("Performing sync...");
             statusClear();
             setDateRange();
 
             String strNow = dfShort.format(new Date()) + " " + tfDefault.format(new Date());
-            if (config.getSyncOnStartup())
+            if (configMgr.getSyncOnStartup())
                 statusAppendLine("Automatic sync-on-startup is enabled. Starting sync - " + strNow);
             else
                 statusAppendLine("Starting sync - " + strNow);
@@ -339,11 +339,15 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
             if (jCheckBox_enableProxy.isSelected()) {
                 if (! jTextField_proxyUsername.getText().isEmpty()) {
-                    proxy.enableProxyAuthentication(true);
-                    proxy.setProxyUser(jTextField_proxyUsername.getText());
-                    proxy.setProxyPassword(new String(jPasswordField_proxyPassword.getPassword()));
+                    proxyMgr.enableProxyAuthentication(true);
+                    proxyMgr.setProxyUser(jTextField_proxyUsername.getText());
+                    proxyMgr.setProxyPassword(new String(jPasswordField_proxyPassword.getPassword()));
                 }
-                proxy.activateNow();
+
+                proxyMgr.setProxyHost(jTextField_proxyIP.getText());
+                proxyMgr.setProxyPort(jTextField_proxyPort.getText());
+                    
+                proxyMgr.activateNow();
 
 //statusAppendLineDiag("DEBUG Proxy manually set info  host: " + proxy.getProxyHost() + "   port: " + proxy.getProxyPort() + "   user: " + proxy.getProxyUser() + "   pwd: " + proxy.getProxyPassword());
             }
@@ -435,7 +439,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         nvd.setVisible(true);
 
         // Update the version number in the config file so this message won't be shown again
-        config.setApplicationVersion(appVersion);
+        configMgr.setApplicationVersion(appVersion);
         
         try {
             saveSettings();
@@ -1219,11 +1223,11 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         this.setTitle(this.getTitle() + " v" + appVersion);
 
-        if ( ! config.getApplicationVersion().equals(appVersion)) {
+        if ( ! configMgr.getApplicationVersion().equals(appVersion)) {
             showNewVersionMessage();
         }
 
-        if (config.getSyncOnStartup() && jButton_Synchronize.isEnabled()) {
+        if (configMgr.getSyncOnStartup() && jButton_Synchronize.isEnabled()) {
             new SyncSwingWorker().execute();
         }
     }//GEN-LAST:event_formWindowOpened
@@ -1359,9 +1363,15 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     }//GEN-LAST:event_jButton_DetectLotusSettingsActionPerformed
 
     private void jTabbedPane_MainStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPane_MainStateChanged
-        // Save settings because we changed tabs
+        // We changed tabs
         try {
+            // Save settings
             saveSettings();
+            
+            // If we switched to the main/sync tab, then validate settings
+            if (jTabbedPane_Main.getSelectedIndex() == TabIds.SYNC.ordinal()) {
+                validateSettings();
+            }
         } catch (IOException ex) {
             statusAppendException("There was an error saving settings.", ex);
         }        
@@ -1378,6 +1388,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             showException(ex);
 	}
         
+        final String MSG_TCPVIEW = "If you are running under Windows, search the LNGS Help for 'TCPView' for how to identify proxy settings.";
 	if (proxyList != null) {
 	    for (Iterator iter = proxyList.iterator(); iter.hasNext();) {
 	    	java.net.Proxy proxy = (java.net.Proxy) iter.next();
@@ -1385,18 +1396,16 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 	    	InetSocketAddress addr = (InetSocketAddress) proxy.address();
 	
 	    	if (addr == null) {
-                    javax.swing.JOptionPane.showMessageDialog(null, "No proxy information could be detected. Make sure you are on the network where the proxy is active.", "No Proxy Information", JOptionPane.INFORMATION_MESSAGE);
+                    javax.swing.JOptionPane.showMessageDialog(null, "No proxy information could be detected. Make sure you are on the network where the proxy is active.\n" + MSG_TCPVIEW, "No Proxy Information", JOptionPane.INFORMATION_MESSAGE);
 	    	} else {
-//                    statusAppendLineDiag("DEBUG proxy hostname : " + addr.getHostName());
-//                    statusAppendLineDiag("DEBUG proxy port : " + addr.getPort());
                     jTextField_proxyIP.setText(addr.getHostName());
                     jTextField_proxyPort.setText(Integer.toString(addr.getPort()));
-                    javax.swing.JOptionPane.showMessageDialog(null, "The proxy server and port fields have been updated with the detected values.\nThese values should work. If they don't work, you will have to manually enter the proxy info.", "Proxy Information Updated", JOptionPane.INFORMATION_MESSAGE);
+                    javax.swing.JOptionPane.showMessageDialog(null, "The proxy server and port fields have been updated with the detected values.\nThese values should work. If they don't work, you can search the LNGS Help file for suggestions.", "Proxy Information Updated", JOptionPane.INFORMATION_MESSAGE);
 	    	}
 	    }
 	}
         else {
-            javax.swing.JOptionPane.showMessageDialog(null, "There was a problem detecting proxy information. The ProxySelector class returned null.\nYou will have to manually enter the proxy info.", "Error Detecting Proxy Information", JOptionPane.ERROR_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(null, "There was a problem detecting proxy information.\nYou will have to manually enter the proxy info.\n" + MSG_TCPVIEW, "Error Detecting Proxy Information", JOptionPane.ERROR_MESSAGE);
         }        
     }//GEN-LAST:event_jButton_DetectProxySettingsActionPerformed
 
@@ -1409,7 +1418,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
         jTextField_proxyPort.setEnabled(jCheckBox_enableProxy.isSelected());
         jTextField_proxyUsername.setEnabled(jCheckBox_enableProxy.isSelected());
         jPasswordField_proxyPassword.setEnabled(jCheckBox_enableProxy.isSelected());
-        validateSettings();        
+        validateSettings();
     }//GEN-LAST:event_jCheckBox_enableProxyItemStateChanged
 
     private void jCheckBox_SyncAlarmsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox_SyncAlarmsActionPerformed
@@ -1439,7 +1448,8 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
             statusAppendLine("Configuration settings were successfully validated.");
         } catch (LngsException ex) {
             statusClear();
-            statusAppendLine("ERROR: A configuration setting is invalid. Syncing is disabled until the problem is resolved.");
+            statusAppendLine("ERROR: A configuration setting is invalid.");
+            statusAppendLine("Syncing is disabled until the problem is resolved:");
             statusAppendLine(ex.getMessage());
 
             jButton_Synchronize.setEnabled(false);
@@ -1479,83 +1489,83 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
     @SuppressWarnings("static-access")
     private void saveSettings() throws IOException {
-        if (config == null) {
+        if (configMgr == null) {
             return;
         }
         
-        config.setLotusNotesServer(jTextField_LotusNotesServer.getText());
-        config.setLotusNotesServerDateFormat(jTextField_LotusNotesServerDateFormat.getText());
-        config.setLotusNotesServerIsLocal(jCheckBox_LotusNotesServerIsLocal.isSelected());
-        config.setLotusNotesMailFile(jTextField_LotusNotesMailFile.getText());
-        config.setLotusNotesPassword(new String(jPasswordField_LotusNotesPassword.getPassword()));
+        configMgr.setLotusNotesServer(jTextField_LotusNotesServer.getText());
+        configMgr.setLotusNotesServerDateFormat(jTextField_LotusNotesServerDateFormat.getText());
+        configMgr.setLotusNotesServerIsLocal(jCheckBox_LotusNotesServerIsLocal.isSelected());
+        configMgr.setLotusNotesMailFile(jTextField_LotusNotesMailFile.getText());
+        configMgr.setLotusNotesPassword(new String(jPasswordField_LotusNotesPassword.getPassword()));
 
-        config.setGoogleUserName(jTextField_GoogleUsername.getText());
+        configMgr.setGoogleUserName(jTextField_GoogleUsername.getText());
 
-        config.setGoogleEnableProxy(jCheckBox_enableProxy.isSelected());
-        config.setGoogleProxyPort(jTextField_proxyPort.getText());
-        config.setGoogleProxyIP(jTextField_proxyIP.getText());
-        config.setGoogleProxyUsername(jTextField_proxyUsername.getText());
-        config.setGoogleProxyPassword(new String(jPasswordField_proxyPassword.getPassword()));
-        config.setGoogleCalendarName(jTextField_DestinationCalendarName.getText());
+        configMgr.setGoogleEnableProxy(jCheckBox_enableProxy.isSelected());
+        configMgr.setGoogleProxyPort(jTextField_proxyPort.getText());
+        configMgr.setGoogleProxyIP(jTextField_proxyIP.getText());
+        configMgr.setGoogleProxyUsername(jTextField_proxyUsername.getText());
+        configMgr.setGoogleProxyPassword(new String(jPasswordField_proxyPassword.getPassword()));
+        configMgr.setGoogleCalendarName(jTextField_DestinationCalendarName.getText());
 
-        config.setSyncOnStartup(jCheckBox_SyncOnStart.isSelected());
-        config.setSyncAtMinOffsets(jCheckBox_SyncAtMinOffsets.isSelected());
-        config.setSyncMinOffsets(jTextField_SyncMinOffsets.getText());
-        config.setSyncAllSubjectsToValue(jCheckBox_SyncAllSubjectsToValue.isSelected());
-        config.setSyncAllSubjectsToThisValue(jTextField_SyncAllSubjectsToThisValue.getText());
-        config.setDiagnosticMode(jCheckBox_DiagnosticMode.isSelected());
-        config.setSyncDescription(jCheckBox_SyncDescription.isSelected());
-        config.setSyncLocationAndRoom(jCheckBox_SyncLocationAndRoom.isSelected());
-        config.setSyncAlarms(jCheckBox_SyncAlarms.isSelected());
-        config.setSyncDaysInFuture(Integer.parseInt(jTextField_SyncDaysInFuture.getText()));
-        config.setSyncDaysInPast(Integer.parseInt(jTextField_SyncDaysInPast.getText()));
-        config.setSyncMeetingAttendees(jCheckBox_SyncMeetingAttendees.isSelected());
+        configMgr.setSyncOnStartup(jCheckBox_SyncOnStart.isSelected());
+        configMgr.setSyncAtMinOffsets(jCheckBox_SyncAtMinOffsets.isSelected());
+        configMgr.setSyncMinOffsets(jTextField_SyncMinOffsets.getText());
+        configMgr.setSyncAllSubjectsToValue(jCheckBox_SyncAllSubjectsToValue.isSelected());
+        configMgr.setSyncAllSubjectsToThisValue(jTextField_SyncAllSubjectsToThisValue.getText());
+        configMgr.setDiagnosticMode(jCheckBox_DiagnosticMode.isSelected());
+        configMgr.setSyncDescription(jCheckBox_SyncDescription.isSelected());
+        configMgr.setSyncLocationAndRoom(jCheckBox_SyncLocationAndRoom.isSelected());
+        configMgr.setSyncAlarms(jCheckBox_SyncAlarms.isSelected());
+        configMgr.setSyncDaysInFuture(Integer.parseInt(jTextField_SyncDaysInFuture.getText()));
+        configMgr.setSyncDaysInPast(Integer.parseInt(jTextField_SyncDaysInPast.getText()));
+        configMgr.setSyncMeetingAttendees(jCheckBox_SyncMeetingAttendees.isSelected());
         
-        config.setDontSaveSensitiveData(jCheckBox_dontSaveSensitiveData.isSelected());        
+        configMgr.setDontSaveSensitiveData(jCheckBox_dontSaveSensitiveData.isSelected());        
 
         //save configuration to file
-        config.writeConfig();
+        configMgr.writeConfig();
     }
 
     private void loadSettings() {
-        jTextField_LotusNotesServer.setText(config.getLotusNotesServer());
-        jTextField_LotusNotesServerDateFormat.setText(config.getLotusNotesServerDateFormat());
-        jCheckBox_LotusNotesServerIsLocal.setSelected(config.getLotusNotesServerIsLocal());
+        jTextField_LotusNotesServer.setText(configMgr.getLotusNotesServer());
+        jTextField_LotusNotesServerDateFormat.setText(configMgr.getLotusNotesServerDateFormat());
+        jCheckBox_LotusNotesServerIsLocal.setSelected(configMgr.getLotusNotesServerIsLocal());
         // Call the state changed event because it doesn't always get fired by the above setSelected() call
         jCheckBox_LotusNotesServerIsLocalItemStateChanged(null);
-        jTextField_LotusNotesMailFile.setText(config.getLotusNotesMailFile());
-        String s = config.getLotusNotesPassword();
-        jPasswordField_LotusNotesPassword.setText(config.getLotusNotesPassword());
+        jTextField_LotusNotesMailFile.setText(configMgr.getLotusNotesMailFile());
+        String s = configMgr.getLotusNotesPassword();
+        jPasswordField_LotusNotesPassword.setText(configMgr.getLotusNotesPassword());
 
-        jTextField_GoogleUsername.setText(config.getGoogleUserName());
-        jCheckBox_enableProxy.setSelected(config.getGoogleEnableProxy());
-        jTextField_proxyIP.setText(config.getGoogleProxyIP());
-        jTextField_proxyPort.setText(config.getGoogleProxyPort());
-        jTextField_proxyUsername.setText(config.getGoogleProxyUsername());
-        jPasswordField_proxyPassword.setText(config.getGoogleProxyPassword());
-        jTextField_DestinationCalendarName.setText(config.getGoogleCalendarName());
+        jTextField_GoogleUsername.setText(configMgr.getGoogleUserName());
+        jCheckBox_enableProxy.setSelected(configMgr.getGoogleEnableProxy());
+        jTextField_proxyIP.setText(configMgr.getGoogleProxyIP());
+        jTextField_proxyPort.setText(configMgr.getGoogleProxyPort());
+        jTextField_proxyUsername.setText(configMgr.getGoogleProxyUsername());
+        jPasswordField_proxyPassword.setText(configMgr.getGoogleProxyPassword());
+        jTextField_DestinationCalendarName.setText(configMgr.getGoogleCalendarName());
 
-        jCheckBox_SyncOnStart.setSelected(config.getSyncOnStartup());
-        jTextField_SyncMinOffsets.setText(config.getSyncMinOffsets());
+        jCheckBox_SyncOnStart.setSelected(configMgr.getSyncOnStartup());
+        jTextField_SyncMinOffsets.setText(configMgr.getSyncMinOffsets());
         jCheckBox_SyncAtMinOffsetsItemStateChanged(null);
-        jCheckBox_SyncAtMinOffsets.setSelected(config.getSyncAtMinOffsets());
-        jCheckBox_SyncAllSubjectsToValue.setSelected(config.getSyncAllSubjectsToValue());
+        jCheckBox_SyncAtMinOffsets.setSelected(configMgr.getSyncAtMinOffsets());
+        jCheckBox_SyncAllSubjectsToValue.setSelected(configMgr.getSyncAllSubjectsToValue());
         jCheckBox_SyncAllSubjectsToValueItemStateChanged(null);
-        jTextField_SyncAllSubjectsToThisValue.setText(config.getSyncAllSubjectsToThisValue());
-        jCheckBox_DiagnosticMode.setSelected(config.getDiagnosticMode());
-        jCheckBox_SyncDescription.setSelected(config.getSyncDescription());
-        jCheckBox_SyncLocationAndRoom.setSelected(config.getSyncLocationAndRoom());
-        jCheckBox_SyncAlarms.setSelected(config.getSyncAlarms());
-        jTextField_SyncDaysInFuture.setText(Integer.toString(config.getSyncDaysInFuture()));
-        jTextField_SyncDaysInPast.setText(Integer.toString(config.getSyncDaysInPast()));
-        jCheckBox_SyncMeetingAttendees.setSelected(config.getSyncMeetingAttendees());
+        jTextField_SyncAllSubjectsToThisValue.setText(configMgr.getSyncAllSubjectsToThisValue());
+        jCheckBox_DiagnosticMode.setSelected(configMgr.getDiagnosticMode());
+        jCheckBox_SyncDescription.setSelected(configMgr.getSyncDescription());
+        jCheckBox_SyncLocationAndRoom.setSelected(configMgr.getSyncLocationAndRoom());
+        jCheckBox_SyncAlarms.setSelected(configMgr.getSyncAlarms());
+        jTextField_SyncDaysInFuture.setText(Integer.toString(configMgr.getSyncDaysInFuture()));
+        jTextField_SyncDaysInPast.setText(Integer.toString(configMgr.getSyncDaysInPast()));
+        jCheckBox_SyncMeetingAttendees.setSelected(configMgr.getSyncMeetingAttendees());
 
-        jCheckBox_dontSaveSensitiveData.setSelected(config.getDontSaveSensitiveData());
+        jCheckBox_dontSaveSensitiveData.setSelected(configMgr.getDontSaveSensitiveData());
         
         // Configure proxy settings
-        proxy.setProxyHost(config.getGoogleProxyIP());
-        proxy.setProxyPort(config.getGoogleProxyPort());
-        proxy.setEnabled(config.getGoogleEnableProxy());
+        proxyMgr.setProxyHost(configMgr.getGoogleProxyIP());
+        proxyMgr.setProxyPort(configMgr.getGoogleProxyPort());
+        proxyMgr.setEnabled(configMgr.getGoogleEnableProxy());
     }
 
 
@@ -1755,12 +1765,12 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
 
     LotusNotesManager lotusNotesMgr = new LotusNotesManager();
     GoogleManager googleMgr = new GoogleManager();
-    ProxyManager proxy;
-    ConfigurationManager config;
+    ProxyManager proxyMgr;
+    ConfigurationManager configMgr;
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.6";
+    final String appVersion = "2.7";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";

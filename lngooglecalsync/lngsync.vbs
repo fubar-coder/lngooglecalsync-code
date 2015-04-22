@@ -1,6 +1,6 @@
 ' This script runs Lotus Notes to Google Calendar Synchronizer (LNGS) under Windows.
 Option Explicit
-dim lotusPath, lotusIniPath, useLotusJava, javaPath
+dim lotusPath, lotusIniPath, useLotusJava, javaPath, lotusJavaPath, homeJavaPath
 
 ' NOTE: If this script fails to locate an important file, this can
 '       probably be fixed by entering the path to the file below.
@@ -19,8 +19,8 @@ javaPath = ""
 useLotusJava = 1
 
 
-
 dim appParm, silentMode, msgboxTitle
+const FILE_READ = 1, FILE_WRITE = 2, FILE_APPEND = 8
 silentMode = false
 msgboxTitle = "Lotus Notes Google Sync"
 dim oShell, oEnv, oFileSys, oJavawExec, oJavaExec
@@ -37,8 +37,11 @@ set oEnv = oShell.Environment("Process")
 ' read fails, try a default path.
 On Error Resume Next
 if lotusPath = "" then lotusPath = oShell.RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Lotus\Notes\Path")
+if lotusPath = "" then lotusPath = oShell.RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Lotus\Notes\Path")
 if lotusPath = "" then lotusPath = oShell.RegRead("HKEY_CURRENT_USER\Software\Lotus\Notes\Installer\PROGDIR")
+if lotusPath = "" then lotusPath = oShell.RegRead("HKEY_CURRENT_USER\Software\Wow6432Node\Lotus\Notes\Installer\PROGDIR")
 if lotusPath = "" then lotusPath = oShell.RegRead("HKEY_CURRENT_USER\Software\IBM\Notes\Installer\PROGDIR")
+if lotusPath = "" then lotusPath = oShell.RegRead("HKEY_CURRENT_USER\Software\Wow6432Node\IBM\Notes\Installer\PROGDIR")
 if lotusPath = "" then
 	' Try to find the path where Lotus Notes is installed
 	' First, get the Program Files path from the environment
@@ -60,7 +63,11 @@ if lotusPath = "" then
 end if
 
 if lotusIniPath = "" then lotusIniPath = oShell.RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Lotus\Notes\DataPath")
+if lotusIniPath = "" then lotusIniPath = oShell.RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\IBM\Notes\DataPath")
+if lotusIniPath = "" then lotusIniPath = oShell.RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Lotus\Notes\DataPath")
 if lotusIniPath = "" then lotusIniPath = oShell.RegRead("HKEY_CURRENT_USER\Software\Lotus\Notes\Installer\DATADIR")
+if lotusIniPath = "" then lotusIniPath = oShell.RegRead("HKEY_CURRENT_USER\Software\IBM\Notes\Installer\DATADIR")
+if lotusIniPath = "" then lotusIniPath = oShell.RegRead("HKEY_CURRENT_USER\Software\Wow6432Node\Lotus\Notes\Installer\DATADIR")
 if lotusIniPath = "" then lotusIniPath = lotusPath & "\Data"
 ' Cancel previous 'On Error' statement
 On Error GoTo 0
@@ -90,19 +97,24 @@ oEnv("PATH") = lotusPath & ";" & lotusIniPath & ";" & processPath
 classPath = lotusJarPath & ";" & oShell.CurrentDirectory & "\lngsync.jar"
 oEnv("CLASSPATH") = classPath
 
-if javaPath = "" then
+' Get the path to the java executable
+if not oFileSys.FileExists(javaPath) then
 	if useLotusJava then
-		' Use the version of Java installed with Lotus Notes.
-		' It is safest to use this version for compatibility with Notes.jar.
-		javaPath = lotusPath & "\jvm\bin\javaw.exe"
+		lotusJavaPath = lotusPath & "\jvm\bin\javaw.exe"
+		if oFileSys.FileExists(lotusJavaPath) then
+			' Use the version of Java installed with Lotus Notes.
+			' It is safest to use this version for compatibility with Notes.jar.
+			javaPath = lotusJavaPath
+		else
+			useLotusJava = 2
+		end if
 	end if
-
+	
 	if not oFileSys.FileExists(javaPath) then
-		useLotusJava = 0
-
-		' Get the path from JAVA_HOME
-		javaPath = oEnv.Item("JAVA_HOME") & "\bin\javaw.exe"
-		if not oFileSys.FileExists(javaPath) then
+		homeJavaPath = oEnv.Item("JAVA_HOME") & "\bin\javaw.exe"
+		if oFileSys.FileExists(homeJavaPath) then
+			javaPath = homeJavaPath
+		else
 			' Let the OS find Java via the PATH
 			javaPath = "javaw.exe"
 		end if
@@ -130,7 +142,7 @@ Loop
 
 if silentMode then
 	' Append stdout and stderr to our log file
-	Set oLogFile = oFileSys.OpenTextFile(logFilename, 8, TRUE)
+	Set oLogFile = oFileSys.OpenTextFile(logFilename, FILE_APPEND, TRUE)
 	oLogFile.WriteLine(oJavawExec.StdOut.ReadAll)
 	oLogFile.WriteLine(oJavawExec.StdErr.ReadAll)
 	oLogFile.Close

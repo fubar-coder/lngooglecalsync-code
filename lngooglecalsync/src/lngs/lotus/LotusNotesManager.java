@@ -97,17 +97,13 @@ public class LotusNotesManager {
 
     /**
      * Retrieve a list of Lotus Notes calendar entries.
-     * @param dominoServer The Domino server to retrieve data from, e.g. "IBM-Domino".
-     *    Pass in null to retrieve from a local mail file.
-     * @param mailFileName The mail file to read from, e.g. "mail/johnsmith.nsf".
      */
     public ArrayList<LotusNotesCalendarEntry> getCalendarEntries() throws LngsException, IOException {
         boolean wasNotesThreadInitialized = false;
         ArrayList<LotusNotesCalendarEntry> calendarEntries = new ArrayList<LotusNotesCalendarEntry>();
         LotusNotesCalendarEntry cal = null;
 
-        statusMessageCallback.statusAppendStart(
-            "Getting Lotus Notes calendar entries");
+        statusMessageCallback.statusAppendStart("Getting Lotus Notes calendar entries");
 
         loadNotesThreadClass();
 
@@ -124,6 +120,9 @@ public class LotusNotesManager {
 
             // Note: We cast null to a String to avoid overload conflicts
             Session session = NotesFactory.createSession((String)null, (String)null, password);
+            if (session == null) {
+                throw new LngsException("Couldn't create Lotus Notes Session object.");
+            }                
             notesVersion = session.getNotesVersion();
 
             String dominoServerTemp = server;
@@ -215,9 +214,7 @@ public class LotusNotesManager {
             DocumentCollection queryResults = db.search(calendarQuery);
 
             if (queryResults == null) {
-                statusMessageCallback.statusAppendLineDiag(
-                    "Query results are null");
-
+                statusMessageCallback.statusAppendLineDiag("Query results are null");
                 return null;
             } else {
                 statusMessageCallback.statusAppendLineDiag(
@@ -236,7 +233,7 @@ public class LotusNotesManager {
             }
 
             calendarEntries = getCalendarEntryList(queryResults);
-
+            
             return calendarEntries;
         } catch (NotesException ex) {
             String exMsg = "There was a problem reading Lotus Notes calendar entries."
@@ -249,6 +246,8 @@ public class LotusNotesManager {
             } else {
                 throw new LngsException(exMsg, ex);
             }
+        } catch (Exception ex) {
+            throw new LngsException("There was a problem reading Lotus Notes calendar entries.", ex);
         } finally {
             // If true, the NotesThread failed to init. The LN dlls probably weren't found.
             // NOTE: Make sure this check is the first line in the finally block. When the
@@ -320,165 +319,163 @@ public class LotusNotesManager {
      * Return a list of LotusNotesCalendarEntry objects.
      */
     protected ArrayList<LotusNotesCalendarEntry> getCalendarEntryList(
-        DocumentCollection queryResults) throws NotesException, IOException {
-        boolean addDoc;
+        DocumentCollection queryResults) throws LngsException, NotesException, IOException {
+        boolean keepCalEntry = false;
+        boolean isRepeating = false;
         ArrayList<LotusNotesCalendarEntry> calendarEntries = new ArrayList<LotusNotesCalendarEntry>();
-        LotusNotesCalendarEntry cal;
+        LotusNotesCalendarEntry cal = null;
 
-        Document doc;
-        doc = queryResults.getFirstDocument();
+        Document doc = queryResults.getFirstDocument();
 
         int cntEntry = 1;
 
-            
-        // Loop through all entries returned
-        while (doc != null) {
-            Item lnItem;
-            addDoc = true;
-           
-            // If we are in diagnostic mode, write the entry to a text file
-            if (diagnosticMode) {
-                writeEntryToFile(doc, cntEntry);
-            }
+        try {
+            // Loop through all entries returned
+            while (doc != null) {
+                Item lnItem;
+                keepCalEntry = true;
 
-            cal = new LotusNotesCalendarEntry();
-            
-            lnItem = doc.getFirstItem("Subject");
+                // If we are in diagnostic mode, write the entry to a text file
+                if (diagnosticMode) {
+                    writeEntryToFile(doc, cntEntry);
+                }
 
-            if (!isItemEmpty(lnItem)) {
-                cal.setSubject(lnItem.getText());
-            } else {
-                cal.setSubject("<no subject>");
-            }
-//statusMessageCallback.statusAppendLineDiag("Processing subject: " + cal.getSubject());
+                cal = new LotusNotesCalendarEntry();
 
-            //statusMessageCallback.statusAppendLineDiag("Subject: " + cal.getSubject());
-            //if (diagnosticMode) {
-            //    writeEntryToFile(doc, cntEntry);
-            //}
-            lnItem = doc.getFirstItem("Body");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setBody(lnItem.getText());
-            }
-
-            // Get the type of Lotus calendar entry
-            lnItem = doc.getFirstItem("Form");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setEntryType(lnItem.getText());
-            } else {
-                // Assume we have an appointment
-                cal.setEntryType(LotusNotesCalendarEntry.EntryType.APPOINTMENT);
-            }
-
-            if (cal.getEntryType() == LotusNotesCalendarEntry.EntryType.APPOINTMENT) {
-                lnItem = doc.getFirstItem("AppointmentType");
-
+                lnItem = doc.getFirstItem("Subject");
                 if (!isItemEmpty(lnItem)) {
-                    cal.setAppointmentType(lnItem.getText());
+                    cal.setSubject(lnItem.getText());
+                } else {
+                    cal.setSubject("<no subject>");
                 }
-            }
-
-            lnItem = doc.getFirstItem("Room");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setRoom(lnItem.getText());
-            }
-
-            lnItem = doc.getFirstItem("Location");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setLocation(lnItem.getText());
-            }
-
-            lnItem = doc.getFirstItem("$Alarm");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setAlarm(true);
-                lnItem = doc.getFirstItem("$AlarmOffset");
-
+                
+                lnItem = doc.getFirstItem("Body");
                 if (!isItemEmpty(lnItem)) {
-                    String alarmValue = lnItem.getText();
-                    // Handle some locales that use ',' as the decimal point
-                    alarmValue = alarmValue.replace(',', '.');
-                    // In rare instances, a min-offset reminder can become a floating
-                    // point value, e.g. create an alarm with a 95 min reminder.
-                    // This is recalculated to ‘1.58333333333333 Hours’ and then
-                    // the inaccurate ‘94.9999999999998 minutes’.
-                    cal.setAlarmOffsetMins(Math.round(Float.parseFloat(
-                                alarmValue)));
+                    cal.setBody(lnItem.getText());
                 }
-            }
 
-            // When the Mark Private checkbox is checked, OrgConfidential is set to 1
-            lnItem = doc.getFirstItem("OrgConfidential");
-
-            if (!isItemEmpty(lnItem)) {
-                if (lnItem.getText().equals("1")) {
-                    cal.setPrivate(true);
-                }
-            }
-
-            //Get attendee info
-            lnItem = doc.getFirstItem("REQUIREDATTENDEES");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setRequiredAttendees(lnItem.getText());
-            }
-
-            lnItem = doc.getFirstItem("OPTIONALATTENDEES");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setOptionalAttendees(lnItem.getText());
-            }
-
-            lnItem = doc.getFirstItem("CHAIR");
-
-            if (!isItemEmpty(lnItem)) {
-                cal.setChairperson(lnItem.getText());
-            }
-
-            lnItem = doc.getFirstItem("APPTUNID");
-
-            if (!isItemEmpty(lnItem)) {
-                // If the APPTUNID contains a URL (http or https), then the entry
-                // isn't a standard Lotus Notes item. It is a link to an external calendar.
-                // In this case, we want to ignore the entry.
-                if (lnItem.getText().matches("(?i).*(https?|Notes):.*")) {
-                    addDoc = false;
-                }
-            }
-
-            cal.setModifiedDateTime(doc.getLastModified().toJavaDate());
-
-            lnItem = doc.getFirstItem("OrgRepeat");
-
-            if (addDoc) {
-                // If true, this is a repeating calendar entry
+                // Get the type of Lotus calendar entry
+                lnItem = doc.getFirstItem("Form");
                 if (!isItemEmpty(lnItem)) {
-                    // Handle Lotus Notes repeating entries by creating multiple Google
-                    // entries
-                    Vector startDates = null;
-                    Vector endDates = null;
+                    cal.setEntryType(lnItem.getText());
+                } else {
+                    // Assume we have an appointment
+                    cal.setEntryType(LotusNotesCalendarEntry.EntryType.APPOINTMENT);
+                }
 
-                    lnItem = doc.getFirstItem("StartDateTime");
+                if (cal.getEntryType() == LotusNotesCalendarEntry.EntryType.APPOINTMENT) {
+                    lnItem = doc.getFirstItem("AppointmentType");
 
                     if (!isItemEmpty(lnItem)) {
-                        if (lnItem.getType() == Item.DATETIMES) {
-                            startDates = lnItem.getValueDateTimeArray();
-                        }                            
+                        cal.setAppointmentType(lnItem.getText());
                     }
+                }
 
-                    lnItem = doc.getFirstItem("EndDateTime");
+                lnItem = doc.getFirstItem("Room");
+                if (!isItemEmpty(lnItem)) {
+                    cal.setRoom(lnItem.getText());
+                }
+
+                lnItem = doc.getFirstItem("Location");
+                if (!isItemEmpty(lnItem)) {
+                    cal.setLocation(lnItem.getText());
+                }
+
+                lnItem = doc.getFirstItem("$Alarm");
+                if (!isItemEmpty(lnItem)) {
+                    cal.setAlarm(true);
+                    lnItem = doc.getFirstItem("$AlarmOffset");
 
                     if (!isItemEmpty(lnItem)) {
-                        if (lnItem.getType() == Item.DATETIMES) {
-                            endDates = lnItem.getValueDateTimeArray();
+                        String alarmValue = lnItem.getText();
+                        // Handle some locales that use ',' as the decimal point
+                        alarmValue = alarmValue.replace(',', '.');
+                        // In rare instances, a min-offset reminder can become a floating
+                        // point value, e.g. create an alarm with a 95 min reminder.
+                        // This is recalculated to ‘1.58333333333333 Hours’ and then
+                        // the inaccurate ‘94.9999999999998 minutes’.
+                        cal.setAlarmOffsetMins(Math.round(Float.parseFloat(
+                                    alarmValue)));
+                    }
+                }
+
+                // When the Mark Private checkbox is checked, OrgConfidential is set to 1
+                lnItem = doc.getFirstItem("OrgConfidential");
+                if (!isItemEmpty(lnItem)) {
+                    if (lnItem.getText().equals("1")) {
+                        cal.setPrivate(true);
+                    }
+                }
+
+                //Get attendee info
+                lnItem = doc.getFirstItem("REQUIREDATTENDEES");
+                if (!isItemEmpty(lnItem)) {
+                    cal.setRequiredAttendees(lnItem.getText());
+                }
+
+                lnItem = doc.getFirstItem("OPTIONALATTENDEES");
+                if (!isItemEmpty(lnItem)) {
+                    cal.setOptionalAttendees(lnItem.getText());
+                }
+
+                lnItem = doc.getFirstItem("CHAIR");
+                if (!isItemEmpty(lnItem)) {
+                    cal.setChairperson(lnItem.getText());
+                }
+
+                // Get unique identifier for this entry
+                lnItem = doc.getFirstItem("APPTUNID");
+                if (!isItemEmpty(lnItem)) {
+                    // If the APPTUNID contains a URL (http or https), then the entry
+                    // isn't a standard Lotus Notes item. It is a link to an external calendar.
+                    // In this case, we want to ignore the entry.
+                    if (lnItem.getText().matches("(?i).*(https?|Notes):.*")) {
+                        keepCalEntry = false;
+                    }
+                }
+
+                cal.setModifiedDateTime(doc.getLastModified().toJavaDate());                    
+
+                if (keepCalEntry) {
+                    // StartDateTime will either contain a single date:
+                    //     12/01/2014 11:00:00 AM
+                    // or be a repeating entry like this:
+                    //     12/01/2014 11:00:00 AM;12/02/2014 11:00:00 AM;12/03/2014 11:00:00 AM;12/04/2014 11:00:00 AM
+                    Item lnStartDateTime = doc.getFirstItem("StartDateTime");;
+                    isRepeating = false;
+                    if (isItemEmpty(lnStartDateTime)) {
+                        throw new LngsException("Couldn't determine start date for Lotus Notes entry.");                    
+                    } else {
+                        if (lnStartDateTime.getText().contains(";")) {
+                            isRepeating = true;
                         }
                     }
 
-                    if (startDates != null) {
+                    Item lnEndDateTime = doc.getFirstItem("EndDateTime");
+
+                    if (isRepeating) {
+                        // Handle Lotus Notes repeating entries by creating multiple Google entries
+                        Vector startDates = null;
+                        Vector endDates = null;
+
+                        if (!isItemEmpty(lnStartDateTime)) {
+                            if (lnStartDateTime.getType() == Item.DATETIMES) {
+                                startDates = lnStartDateTime.getValues();
+                            } else {
+                                throw new LngsException("Repeating start dates are not of type DATETIMES.");
+                            }
+                        }
+
+                        if (!isItemEmpty(lnEndDateTime)) {
+                            if (lnEndDateTime.getType() == Item.DATETIMES) {
+                                endDates = lnEndDateTime.getValues();
+                            } else {
+                                throw new LngsException("Repeating end dates are not of type DATETIMES.");
+                            }
+                        } else {
+                            throw new LngsException("Couldn't determine end date for repeating Lotus Notes entry.");                        
+                        }
+
                         for (int i = 0; i < startDates.size(); i++) {
                             if (startDates.get(i) instanceof DateTime) {
                                 DateTime notesDate = (DateTime) startDates.get(i);
@@ -504,37 +501,45 @@ public class LotusNotesManager {
                                 }
                             }
                         }
-                    }
-                } else {
-                    cal.setUID(doc.getUniversalID());
+                    } else {
+                        cal.setUID(doc.getUniversalID());
 
-                    lnItem = doc.getFirstItem("StartDateTime");
+                        if (!isItemEmpty(lnStartDateTime)) {
+                            cal.setStartDateTime(lnStartDateTime.getDateTimeValue().toJavaDate());
+                        }
 
-                    if (!isItemEmpty(lnItem)) {
-                        cal.setStartDateTime(lnItem.getDateTimeValue()
-                                                   .toJavaDate());
-                    }
+                        // For To Do tasks, the EndDateTime doesn't exist, but there is an EndDate value
+                        lnItem = lnEndDateTime;
+                        if (isItemEmpty(lnItem)) {
+                            lnItem = doc.getFirstItem("EndDate");
+                        }
 
-                    // For To Do tasks, the EndDateTime doesn't exist, but there is an EndDate value
-                    lnItem = doc.getFirstItem("EndDateTime");
+                        if (!isItemEmpty(lnItem)) {
+                            cal.setEndDateTime(lnItem.getDateTimeValue().toJavaDate());
+                        } else {
+                            throw new LngsException("Couldn't determine end date for Lotus Notes entry.");
+                        }
 
-                    if (isItemEmpty(lnItem)) {
-                        lnItem = doc.getFirstItem("EndDate");
-                    }
-
-                    if (!isItemEmpty(lnItem)) {
-                        cal.setEndDateTime(lnItem.getDateTimeValue().toJavaDate());
-                    }
-
-                    // Only add the entry if it is within our sync date range
-                    if (isDateInRange(cal.getStartDateTime())) {
-                        calendarEntries.add(cal);
+                        // Only add the entry if it is within our sync date range
+                        if (isDateInRange(cal.getStartDateTime())) {
+                            calendarEntries.add(cal);
+                        }
                     }
                 }
-            }
 
-            doc = queryResults.getNextDocument();
-            cntEntry++;
+                doc = queryResults.getNextDocument();
+                cntEntry++;
+            }
+        } catch (Exception ex) {
+            String exMsg = "There was a problem processing the retrieved Lotus Notes calendar entries.";
+
+            if ((cal != null) && (cal.getSubject() != null)) {
+                throw new LngsException(exMsg +
+                    "\nThe subject of the entry being processed: " +
+                    cal.getSubject(), ex);
+            } else {
+                throw new LngsException(exMsg, ex);
+            }
         }
 
         return calendarEntries;
@@ -623,11 +628,6 @@ public class LotusNotesManager {
 
         if (doc.isDeleted()) {
             lnFoundEntriesWriter.write("  Doc is flagged Deleted.\n\n");
-            return;
-        }
-
-        if (doc.isEncrypted()) {
-            lnFoundEntriesWriter.write("  Doc is flagged Encrypted.\n\n");
             return;
         }
 

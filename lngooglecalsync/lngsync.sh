@@ -19,10 +19,10 @@ OS_TYPE=`uname`
 
 # Configure for Linux
 if [ "$OS_TYPE" = "Linux" ]; then
-  if [ -d "/opt/ibm/lotus/notes" ]; then  # Notes v8
-     NOTES_PATH=/opt/ibm/lotus/notes
-  elif [ -d "/opt/ibm/notes" ]; then      # Notes v9
+  if [ -d "/opt/ibm/notes" ]; then          # Notes v9
      NOTES_PATH=/opt/ibm/notes
+  elif [ -d "/opt/ibm/lotus/notes" ]; then  # Notes v8
+     NOTES_PATH=/opt/ibm/lotus/notes
   else
      echo "The Linux Lotus Notes installation directory could NOT be determined. Exiting."
      exit 1
@@ -55,7 +55,7 @@ SCRIPT_PATH=`dirname "$0"`
 # Make invokable from any directory
 cd "$SCRIPT_PATH"
 
-# Make silent mode work for cronjobs with ugly X11 hack
+# Make silent mode work for cronjobs by using an ugly X11 hack
 if [ -z "$DISPLAY" ]; then
 	# try with default ...
 	export DISPLAY=:0.0
@@ -75,8 +75,8 @@ if [ -z "$JAVA_PATH" ]; then
 	if [ -e "$NOTES_PATH/jvm/bin/java" ]; then
 		JAVA_PATH="$NOTES_PATH/jvm/bin/java"
 	# If an OS X version of Java is present, use it
-	elif [ -e "$JAVA_PATH_OSX" ]; then
-		JAVA_PATH="$JAVA_PATH_OSX"
+	elif [ -e "$JAVA_PATH_OSX/bin/java" ]; then
+		JAVA_PATH="$JAVA_PATH_OSX/bin/java"
 	# If JAVA_HOME points to a version of Java, use it
 	elif [ -e "$JAVA_HOME/bin/java" ]; then
 		JAVA_PATH="$JAVA_HOME/bin/java"

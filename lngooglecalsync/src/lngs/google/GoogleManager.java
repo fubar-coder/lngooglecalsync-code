@@ -222,6 +222,7 @@ public class GoogleManager {
                 if (entry.getSummary().equals(destinationCalendarName)) {
                     // Get the Calendar object
                     destCalendar = client.calendars().get(entry.getId()).execute();
+                    statusMessageCallback.statusAppendLineDiag("Found Google calendar: " + entry.getSummary());
                     return;
                 }
             }
@@ -425,6 +426,17 @@ public class GoogleManager {
      * googleCalEntries will only contain the entries we want deleted.
      */
     public void compareCalendarEntries(ArrayList<LotusNotesCalendarEntry> lotusCalEntries, ArrayList<Event> googleCalEntries) {
+        // Loop through all Google entries and remove entries that were created in GCal (not by LNGS)
+        for (int j = 0; j < googleCalEntries.size(); j++) {
+            if ( ! LotusNotesCalendarEntry.isLNGSUID(googleCalEntries.get(j).getICalUID())) {
+                // The Google entry was NOT created by LNGS, so we want to remove it from
+                // our processing list (i.e. we will leave it alone).
+                googleCalEntries.remove(j--);
+//statusMessageCallback.statusAppendLineDiag("Compare: Google entry NOT created by LNGS: " + googleCalEntries.get(j).getSummary());
+            }
+        }
+
+
         // Loop through all Lotus entries
         for (int i = 0; i < lotusCalEntries.size(); i++) {
             LotusNotesCalendarEntry lotusEntry = lotusCalEntries.get(i);
@@ -432,13 +444,7 @@ public class GoogleManager {
             // Loop through all Google entries for each Lotus entry.  This isn't
             // very efficient, but we have small lists (probably less than 300).
             for (int j = 0; j < googleCalEntries.size(); j++) {
-                if ( ! LotusNotesCalendarEntry.isLNGSUID(googleCalEntries.get(j).getICalUID())) {
-                    // The Google entry was NOT created by LNGS, so we want to remove it from
-                    // our processing list (i.e. we will leave it alone).
-                    googleCalEntries.remove(j--);
-//statusMessageCallback.statusAppendLineDiag("Compare: Google entry NOT created by LNGS: " + googleCalEntries.get(j).getSummary());
-                }
-                else if ( ! hasEntryChanged(lotusEntry, googleCalEntries.get(j))) {
+                if ( ! hasEntryChanged(lotusEntry, googleCalEntries.get(j))) {
                     // The Lotus and Google entries are identical, so remove them from out lists.
                     // They don't need created or deleted.
                     lotusCalEntries.remove(i--);
@@ -712,8 +718,12 @@ public class GoogleManager {
             event.setEnd(endEdt);                
                 
             Event.Reminders reminders = new Event.Reminders();
-            reminders.setUseDefault(false);
+            // Each Google Calendar can have 0 to 5 default reminders/notifications which are used when
+            // a new calendar entry is created. If syncAlarms is false, then the GCal default reminders
+            // will be used. When true, the Lotus Notes alarms are used.
+            reminders.setUseDefault(true);
             if (syncAlarms) {
+                reminders.setUseDefault(false);
                 if (lotusEntry.getAlarm()) {
                     com.google.api.services.calendar.model.EventReminder reminder = new com.google.api.services.calendar.model.EventReminder();
                     
