@@ -57,13 +57,16 @@ cd "$SCRIPT_PATH"
 
 # Make silent mode work for cronjobs by using an ugly X11 hack
 if [ -z "$DISPLAY" ]; then
-	# try with default ...
+	# Try with default display
 	export DISPLAY=:0.0
-	# ... but test
-	xset -q 1> /dev/null 2>1
-	if [ $? != 0 ]; then
-		echo The DISPLAY environment variable was not set, and the attempt to manually set did not work.
-		echo The application may not startup properly.
+	
+	# Make sure xset command exists
+	if type "xset" > /dev/null 2>&1; then
+	  xset -q 1> /dev/null 2>1
+	  if [ $? != 0 ]; then
+  		echo The DISPLAY environment variable was not set, and the attempt to manually set did not work.
+	  	echo The application may not startup properly.
+  	fi
 	fi
 fi
 
@@ -90,9 +93,14 @@ JAVA_COMMAND="$JAVA_PATH "
 
 
 if [ -n $1 ] && [ "$1" = "-silent" ]; then
+  if [ "$OS_TYPE" = "Darwin" ]; then
+    # This property will prevent the Java icon from showing in the Dock
+    JAVA_OSX_OPTIONS=-Dapple.awt.UIElement=true
+  fi
+  
 	echo Running Lotus Notes Google Calendar Sync in silent mode...
 	LOG_FILE=$SCRIPT_PATH/lngsync.log
-	$JAVA_COMMAND -cp "$MY_CLASSPATH" lngs.MainGUI $* > $LOG_FILE
+	$JAVA_COMMAND $JAVA_OSX_OPTIONS -cp "$MY_CLASSPATH" lngs.MainGUI $* > $LOG_FILE
 	rc=$?
 	echo Synchronization complete.  See log file $LOG_FILE
 else 

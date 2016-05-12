@@ -1664,14 +1664,14 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
      */
     @Override
     public void statusAppendLine(String text) {
-    	if (isSilentMode) 
+    	if (isSilentMode) {
     		System.out.println(text);
-    	else {
+        } else {
     		jTextArea_Status.append(text + "\n");
 
             // Scroll to the bottom so the new text can be seen
             jTextArea_Status.setCaretPosition(jTextArea_Status.getDocument().getLength());
-      }
+        }
     }
 
     /**
@@ -1770,7 +1770,7 @@ public class MainGUI extends javax.swing.JFrame implements StatusMessageCallback
     private boolean isUrlValid = false;
     long statusStartTime = 0;
     String statusStartMsg;
-    final String appVersion = "2.7";
+    final String appVersion = "2.8";
     private boolean isSilentMode = false;
     private boolean saveSettingsOnExit = true;
     private String helpFilename = "(unknown)";
